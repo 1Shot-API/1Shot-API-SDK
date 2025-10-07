@@ -1,11 +1,11 @@
-import { ClientConfig, TokenResponse } from './types.js';
-import { ContractMethods } from './categories/contractMethods.js';
-import { Transactions } from './categories/transactions.js';
-import { Wallets } from './categories/wallets.js';
-import { Structs } from './categories/structs.js';
-import { Chains } from './categories/chains.js';
-import { ContractEvents } from './categories/contractEvents.js';
-import { IOneShotClient } from './types/client.js';
+import { ClientConfig, TokenResponse } from "./types.js";
+import { ContractMethods } from "./categories/contractMethods.js";
+import { Transactions } from "./categories/transactions.js";
+import { Wallets } from "./categories/wallets.js";
+import { Structs } from "./categories/structs.js";
+import { Chains } from "./categories/chains.js";
+import { ContractEvents } from "./categories/contractEvents.js";
+import { IOneShotClient } from "./types/client.js";
 
 export class OneShotClient implements IOneShotClient {
   private config: ClientConfig;
@@ -22,7 +22,7 @@ export class OneShotClient implements IOneShotClient {
   constructor(config: ClientConfig) {
     this.config = {
       ...config,
-      baseUrl: config.baseUrl || 'https://api.1shotapi.com/v0',
+      baseUrl: config.baseUrl || "https://api.1shotapi.com/v0",
     };
     this.transactions = new Transactions(this);
     this.contractMethods = new ContractMethods(this);
@@ -38,12 +38,12 @@ export class OneShotClient implements IOneShotClient {
     }
 
     const response = await fetch(`${this.config.baseUrl}/token`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: 'client_credentials',
+        grant_type: "client_credentials",
         client_id: this.config.apiKey,
         client_secret: this.config.apiSecret,
       }),
@@ -65,7 +65,7 @@ export class OneShotClient implements IOneShotClient {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
     });

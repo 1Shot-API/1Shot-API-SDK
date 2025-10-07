@@ -1,11 +1,11 @@
-import { IOneShotClient } from '../types/client.js';
+import { IOneShotClient } from "../types/client.js";
 import {
   ContractEvent,
   UpdateContractEvent,
   SearchContractEventLogs,
   ContractEventSearchResult,
-} from '../types/contractEvent.js';
-import { PagedResponse } from '../types/common.js';
+} from "../types/contractEvent.js";
+import { PagedResponse } from "../types/common.js";
 import {
   contractEventSchema,
   contractEventListSchema,
@@ -16,8 +16,8 @@ import {
   deleteContractEventSchema,
   searchContractEventLogsSchema,
   contractEventSearchResultSchema,
-} from '../validation/contractEvent.js';
-import { z } from 'zod';
+} from "../validation/contractEvent.js";
+import { z } from "zod";
 
 const listContractEventsSchemaOptions = listContractEventsSchema.omit({
   businessId: true,
@@ -47,7 +47,7 @@ export class ContractEvents {
     });
 
     const response = await this.client.request<ContractEvent>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/events`,
       validatedParams
     );
@@ -73,25 +73,25 @@ export class ContractEvents {
 
     const queryParams = new URLSearchParams();
     if (validatedParams.pageSize !== undefined && validatedParams.pageSize !== null) {
-      queryParams.append('pageSize', validatedParams.pageSize.toString());
+      queryParams.append("pageSize", validatedParams.pageSize.toString());
     }
     if (validatedParams.page !== undefined && validatedParams.page !== null) {
-      queryParams.append('page', validatedParams.page.toString());
+      queryParams.append("page", validatedParams.page.toString());
     }
     if (validatedParams.chainId !== undefined && validatedParams.chainId !== null) {
-      queryParams.append('chainId', validatedParams.chainId.toString());
+      queryParams.append("chainId", validatedParams.chainId.toString());
     }
     if (validatedParams.name !== undefined && validatedParams.name !== null) {
-      queryParams.append('name', validatedParams.name);
+      queryParams.append("name", validatedParams.name);
     }
     if (validatedParams.status !== undefined && validatedParams.status !== null) {
-      queryParams.append('status', validatedParams.status);
+      queryParams.append("status", validatedParams.status);
     }
     if (validatedParams.contractAddress !== undefined && validatedParams.contractAddress !== null) {
-      queryParams.append('contractAddress', validatedParams.contractAddress);
+      queryParams.append("contractAddress", validatedParams.contractAddress);
     }
     if (validatedParams.eventName !== undefined && validatedParams.eventName !== null) {
-      queryParams.append('eventName', validatedParams.eventName);
+      queryParams.append("eventName", validatedParams.eventName);
     }
 
     const queryString = queryParams.toString();
@@ -99,7 +99,7 @@ export class ContractEvents {
       ? `/business/${validatedParams.businessId}/events?${queryString}`
       : `/business/${validatedParams.businessId}/events`;
 
-    const response = await this.client.request<PagedResponse<ContractEvent>>('GET', path);
+    const response = await this.client.request<PagedResponse<ContractEvent>>("GET", path);
 
     return contractEventListSchema.parse(response);
   }
@@ -114,7 +114,7 @@ export class ContractEvents {
     const validatedParams = getContractEventSchema.parse({ contractEventId });
 
     const response = await this.client.request<ContractEvent>(
-      'GET',
+      "GET",
       `/events/${validatedParams.contractEventId}`
     );
 
@@ -132,7 +132,7 @@ export class ContractEvents {
     const validatedParams = updateContractEventSchema.parse(params);
 
     const response = await this.client.request<ContractEvent>(
-      'PUT',
+      "PUT",
       `/events/${contractEventId}`,
       validatedParams
     );
@@ -150,7 +150,7 @@ export class ContractEvents {
     const validatedParams = deleteContractEventSchema.parse({ contractEventId });
 
     const response = await this.client.request<{ success: boolean }>(
-      'DELETE',
+      "DELETE",
       `/events/${validatedParams.contractEventId}`
     );
 
@@ -171,7 +171,7 @@ export class ContractEvents {
     const validatedParams = searchContractEventLogsSchema.parse(params || {});
 
     const response = await this.client.request<ContractEventSearchResult>(
-      'POST',
+      "POST",
       `/events/${contractEventId}/search`,
       validatedParams
     );

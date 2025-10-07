@@ -1,3 +1,5 @@
+/// <reference types="jest" />
+
 import { validateWebhook } from '../src/utils/webhook.js';
 
 describe('validateWebhook', () => {

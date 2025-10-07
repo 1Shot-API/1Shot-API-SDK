@@ -1,5 +1,5 @@
-import { transactionSchema, logDescriptionSchema } from '../validation/transaction.js';
-import { z } from 'zod';
+import { transactionSchema, logDescriptionSchema } from "../validation/transaction.js";
+import { z } from "zod";
 
 /**
  * Represents the execution of a transaction in the 1Shot API.

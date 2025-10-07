@@ -1,4 +1,10 @@
-import { executeContractMethodSchema, readContractMethodSchema, testContractMethodSchema } from '../src/validation/contractMethod.js';
+/// <reference types="jest" />
+
+import {
+  executeContractMethodSchema,
+  readContractMethodSchema,
+  testContractMethodSchema,
+} from '../src/validation/contractMethod.js';
 
 describe('Parameter validation test', () => {
   // Placeholder data - replace with actual test data
@@ -31,10 +37,10 @@ describe('Parameter validation test', () => {
 describe('Read contractMethod test', () => {
   // Placeholder data - replace with actual test data
   const mockParams = {
-    secondsAgos: [ "0", "360" ],
+    secondsAgos: ['0', '360'],
   };
 
-  const mockContractMethodId = "5857f83d-7d65-4614-9731-bdd238b01120";
+  const mockContractMethodId = '5857f83d-7d65-4614-9731-bdd238b01120';
 
   it('should pass validation', async () => {
     const parsedParams = readContractMethodSchema.parse({
@@ -49,10 +55,10 @@ describe('Read contractMethod test', () => {
 describe('Execute contractMethod test', () => {
   // Placeholder data - replace with actual test data
   const mockParams = {
-    secondsAgos: [ "0", "360" ],
+    secondsAgos: ['0', '360'],
   };
 
-  const mockContractMethodId = "5857f83d-7d65-4614-9731-bdd238b01120";
+  const mockContractMethodId = '5857f83d-7d65-4614-9731-bdd238b01120';
 
   it('should pass validation', async () => {
     const parsedParams = executeContractMethodSchema.parse({

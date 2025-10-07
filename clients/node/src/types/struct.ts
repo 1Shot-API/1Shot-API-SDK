@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   newSolidityStructParamSchema,
   solidityStructParamSchema,
@@ -6,7 +6,7 @@ import {
   structUpdateSchema,
   solidityStructParamUpdateSchema,
   updateStructParamsSchema,
-} from '../validation/struct.js';
+} from "../validation/struct.js";
 
 export type SolidityStructParamUpdate = z.infer<typeof solidityStructParamUpdateSchema>;
 export type NewSolidityStructParam = z.infer<typeof newSolidityStructParamSchema>;

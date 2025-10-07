@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   accountBalanceDetailsSchema,
   walletSchema,
@@ -15,7 +15,7 @@ import {
   delegationListSchema,
   listDelegationsSchema,
   createDelegationSchema,
-} from '../validation/wallet.js';
+} from "../validation/wallet.js";
 
 /**
  * Represents an escrow wallet in the 1Shot API.

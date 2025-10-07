@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   topicSchema,
   contractEventLogSchema,
@@ -11,7 +11,7 @@ import {
   deleteContractEventSchema,
   searchContractEventLogsSchema,
   contractEventSearchResultSchema,
-} from '../validation/contractEvent.js';
+} from "../validation/contractEvent.js";
 
 /**
  * Represents a topic parameter for a contract event.

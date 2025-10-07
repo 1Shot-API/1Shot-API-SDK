@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 import {
   contractMethodStateMutabilitySchema,
   contractMethodStatusSchema,
@@ -29,7 +29,7 @@ import {
   contractMethodTestResultSchema,
   contractMethodEncodeResultSchema,
   erc7702AuthorizationSchema,
-} from '../validation/contractMethod.js';
+} from "../validation/contractMethod.js";
 
 export type ContractMethodStateMutability = z.infer<typeof contractMethodStateMutabilitySchema>;
 export type ContractMethodStatus = z.infer<typeof contractMethodStatusSchema>;

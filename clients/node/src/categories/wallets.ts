@@ -1,7 +1,7 @@
-import { IOneShotClient } from '../types/client.js';
-import { Wallet, Delegation } from '../types/wallet.js';
-import { Transaction } from '../types/transaction.js';
-import { PagedResponse } from '../types/common.js';
+import { IOneShotClient } from "../types/client.js";
+import { Wallet, Delegation } from "../types/wallet.js";
+import { Transaction } from "../types/transaction.js";
+import { PagedResponse } from "../types/common.js";
 import {
   walletSchema,
   walletListSchema,
@@ -16,8 +16,8 @@ import {
   listDelegationsSchema,
   createDelegationSchema,
   deleteDelegationSchema,
-} from '../validation/wallet.js';
-import { z } from 'zod/index.js';
+} from "../validation/wallet.js";
+import { z } from "zod/index.js";
 
 const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
@@ -56,7 +56,7 @@ export class Wallets {
       ? `/business/${validatedParams.businessId}/wallets?${queryString}`
       : `/business/${validatedParams.businessId}/wallets`;
 
-    const response = await this.client.request<PagedResponse<Wallet>>('GET', path);
+    const response = await this.client.request<PagedResponse<Wallet>>("GET", path);
 
     // Validate the response
     return walletListSchema.parse(response);
@@ -84,7 +84,7 @@ export class Wallets {
     });
 
     const response = await this.client.request<Wallet>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/wallets`,
       {
         chainId: validatedParams.chainId,
@@ -116,14 +116,14 @@ export class Wallets {
 
     const queryParams = new URLSearchParams();
     if (validatedParams.includeBalances != undefined) {
-      queryParams.append('includeBalances', validatedParams.includeBalances.toString());
+      queryParams.append("includeBalances", validatedParams.includeBalances.toString());
     }
     const queryString = queryParams.toString();
     const path = queryString
       ? `/wallets/${validatedParams.walletId}?${queryString}`
       : `/wallets/${validatedParams.walletId}`;
 
-    const response = await this.client.request<Wallet>('GET', path);
+    const response = await this.client.request<Wallet>("GET", path);
 
     // Validate the response
     return walletSchema.parse(response);
@@ -150,7 +150,7 @@ export class Wallets {
     });
 
     const response = await this.client.request<Wallet>(
-      'PUT',
+      "PUT",
       `/wallets/${validatedParams.walletId}`,
       {
         name: validatedParams.name,
@@ -175,7 +175,7 @@ export class Wallets {
     });
 
     return this.client.request<{ success: boolean }>(
-      'DELETE',
+      "DELETE",
       `/wallets/${validatedParams.walletId}`
     );
   }
@@ -202,7 +202,7 @@ export class Wallets {
     });
 
     const response = await this.client.request<Transaction>(
-      'POST',
+      "POST",
       `/wallets/${validatedParams.walletId}/transfer`,
       {
         destinationAccountAddress: validatedParams.destinationAccountAddress,
@@ -245,7 +245,7 @@ export class Wallets {
       ? `/wallets/${validatedParams.walletId}/delegations?${queryString}`
       : `/wallets/${validatedParams.walletId}/delegations`;
 
-    const response = await this.client.request<PagedResponse<Delegation>>('GET', path);
+    const response = await this.client.request<PagedResponse<Delegation>>("GET", path);
 
     // Validate the response
     return delegationListSchema.parse(response);
@@ -275,7 +275,7 @@ export class Wallets {
     });
 
     const response = await this.client.request<Delegation>(
-      'POST',
+      "POST",
       `/wallets/${validatedParams.walletId}/delegations`,
       {
         startTime: validatedParams.startTime,
@@ -303,7 +303,7 @@ export class Wallets {
     });
 
     return this.client.request<{ success: boolean }>(
-      'DELETE',
+      "DELETE",
       `/delegation/${validatedParams.delegationId}`
     );
   }

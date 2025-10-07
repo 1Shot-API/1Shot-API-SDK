@@ -1,5 +1,5 @@
-import { verify, etc } from '@noble/ed25519';
-import { sha512 } from '@noble/hashes/sha512';
+import { verify, etc } from "@noble/ed25519";
+import { sha512 } from "@noble/hashes/sha512";
 
 // Initialize the ed25519 library with SHA-512
 etc.sha512Sync = (...m) => sha512(etc.concatBytes(...m));
@@ -10,7 +10,7 @@ etc.sha512Sync = (...m) => sha512(etc.concatBytes(...m));
  * @returns A new object with sorted keys
  */
 function sortObjectKeys(obj: Record<string, any>): Record<string, any> {
-  if (obj === null || typeof obj !== 'object') {
+  if (obj === null || typeof obj !== "object") {
     return obj;
   }
 
@@ -57,10 +57,10 @@ export async function validateWebhook(
     }
 
     // Convert the public key from base64 to bytes
-    const publicKeyBytes = Buffer.from(publicKey, 'base64');
+    const publicKeyBytes = Buffer.from(publicKey, "base64");
 
     // Convert the signature from base64 to bytes
-    const signatureBytes = Buffer.from(signature, 'base64');
+    const signatureBytes = Buffer.from(signature, "base64");
 
     // Sort all object keys recursively and create a canonical JSON string
     const sortedData = sortObjectKeys(dataWithoutSignature);

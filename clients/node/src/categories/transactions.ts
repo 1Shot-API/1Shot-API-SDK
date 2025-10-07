@@ -1,12 +1,12 @@
-import { IOneShotClient } from '../types/client.js';
-import { Transaction } from '../types/transaction.js';
-import { PagedResponse } from '../types/common.js';
+import { IOneShotClient } from "../types/client.js";
+import { Transaction } from "../types/transaction.js";
+import { PagedResponse } from "../types/common.js";
 import {
   transactionSchema,
   transactionListSchema,
   getTransactionSchema,
   listTransactionsSchema,
-} from '../validation/transaction.js';
+} from "../validation/transaction.js";
 
 export class Transactions {
   constructor(private client: IOneShotClient) {}
@@ -24,7 +24,7 @@ export class Transactions {
     });
 
     const response = await this.client.request<Transaction>(
-      'GET',
+      "GET",
       `/transactions/${validatedParams.transactionId}`
     );
 
@@ -45,7 +45,7 @@ export class Transactions {
       pageSize?: number;
       page?: number;
       chainId?: number;
-      status?: 'Pending' | 'Submitted' | 'Completed' | 'Retrying' | 'Failed';
+      status?: "Pending" | "Submitted" | "Completed" | "Retrying" | "Failed";
       walletId?: string;
       contractMethodId?: string;
       apiCredentialId?: string;
@@ -71,7 +71,7 @@ export class Transactions {
       ? `/business/${validatedParams.businessId}/transactions?${queryString}`
       : `/business/${validatedParams.businessId}/transactions`;
 
-    const response = await this.client.request<PagedResponse<Transaction>>('GET', path);
+    const response = await this.client.request<PagedResponse<Transaction>>("GET", path);
 
     // Validate the response
     return transactionListSchema.parse(response);
