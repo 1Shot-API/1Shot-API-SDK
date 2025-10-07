@@ -4,6 +4,7 @@ import { Transactions } from './categories/transactions.js';
 import { Wallets } from './categories/wallets.js';
 import { Structs } from './categories/structs.js';
 import { Chains } from './categories/chains.js';
+import { ContractEvents } from './categories/contractEvents.js';
 import { IOneShotClient } from './types/client.js';
 
 export class OneShotClient implements IOneShotClient {
@@ -16,6 +17,7 @@ export class OneShotClient implements IOneShotClient {
   public readonly wallets: Wallets;
   public readonly structs: Structs;
   public readonly chains: Chains;
+  public readonly contractEvents: ContractEvents;
 
   constructor(config: ClientConfig) {
     this.config = {
@@ -27,6 +29,7 @@ export class OneShotClient implements IOneShotClient {
     this.wallets = new Wallets(this);
     this.structs = new Structs(this);
     this.chains = new Chains(this);
+    this.contractEvents = new ContractEvents(this);
   }
 
   private async getAccessToken(): Promise<string> {
