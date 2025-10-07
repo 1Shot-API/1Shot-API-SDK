@@ -1,6 +1,7 @@
-import { IOneShotClient } from "../types/client.js";
+import { z } from "zod/index.js";
+
 import { EthereumAbi } from "../types/abi.js";
-import { NewSolidityStructParam } from "../types/struct.js";
+import { IOneShotClient } from "../types/client.js";
 import { FullPrompt } from "../types/contract.js";
 import {
   ContractMethod,
@@ -14,6 +15,8 @@ import {
   ExecuteBatchContractMethod,
   ExecuteBatchAsDelegatorContractMethod,
 } from "../types/contractMethod.js";
+import { NewSolidityStructParam } from "../types/struct.js";
+import { Transaction } from "../types/transaction.js";
 import {
   contractMethodSchema,
   contractMethodListSchema,
@@ -38,9 +41,7 @@ import {
   contractMethodEncodeResultSchema,
   assureContractMethodsFromPromptSchema,
 } from "../validation/contractMethod.js";
-import { Transaction } from "../types/transaction.js";
 import { transactionSchema } from "../validation/transaction.js";
-import { z } from "zod/index.js";
 
 const listContractMethodsSchemaOptions = listContractMethodsSchema.omit({
   businessId: true,

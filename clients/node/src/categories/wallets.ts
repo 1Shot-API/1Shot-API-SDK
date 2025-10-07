@@ -1,7 +1,9 @@
+import { z } from "zod/index.js";
+
 import { IOneShotClient } from "../types/client.js";
-import { Wallet, Delegation } from "../types/wallet.js";
-import { Transaction } from "../types/transaction.js";
 import { PagedResponse } from "../types/common.js";
+import { Transaction } from "../types/transaction.js";
+import { Wallet, Delegation } from "../types/wallet.js";
 import {
   walletSchema,
   walletListSchema,
@@ -17,7 +19,6 @@ import {
   createDelegationSchema,
   deleteDelegationSchema,
 } from "../validation/wallet.js";
-import { z } from "zod/index.js";
 
 const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });

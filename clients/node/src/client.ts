@@ -1,11 +1,11 @@
-import { ClientConfig, TokenResponse } from "./types.js";
-import { ContractMethods } from "./categories/contractMethods.js";
-import { Transactions } from "./categories/transactions.js";
-import { Wallets } from "./categories/wallets.js";
-import { Structs } from "./categories/structs.js";
 import { Chains } from "./categories/chains.js";
 import { ContractEvents } from "./categories/contractEvents.js";
+import { ContractMethods } from "./categories/contractMethods.js";
+import { Structs } from "./categories/structs.js";
+import { Transactions } from "./categories/transactions.js";
+import { Wallets } from "./categories/wallets.js";
 import { IOneShotClient } from "./types/client.js";
+import { ClientConfig, TokenResponse } from "./types.js";
 
 export class OneShotClient implements IOneShotClient {
   private config: ClientConfig;

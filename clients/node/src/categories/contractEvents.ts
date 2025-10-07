@@ -1,11 +1,13 @@
+import { z } from "zod";
+
 import { IOneShotClient } from "../types/client.js";
+import { PagedResponse } from "../types/common.js";
 import {
   ContractEvent,
   UpdateContractEvent,
   SearchContractEventLogs,
   ContractEventSearchResult,
 } from "../types/contractEvent.js";
-import { PagedResponse } from "../types/common.js";
 import {
   contractEventSchema,
   contractEventListSchema,
@@ -17,7 +19,6 @@ import {
   searchContractEventLogsSchema,
   contractEventSearchResultSchema,
 } from "../validation/contractEvent.js";
-import { z } from "zod";
 
 const listContractEventsSchemaOptions = listContractEventsSchema.omit({
   businessId: true,

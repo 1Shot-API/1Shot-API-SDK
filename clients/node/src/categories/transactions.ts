@@ -1,6 +1,6 @@
 import { IOneShotClient } from "../types/client.js";
-import { Transaction } from "../types/transaction.js";
 import { PagedResponse } from "../types/common.js";
+import { Transaction } from "../types/transaction.js";
 import {
   transactionSchema,
   transactionListSchema,

@@ -1,5 +1,5 @@
-import { IOneShotClient } from "../types/client.js";
 import { ChainInfo, ListChains, GasFees } from "../types/chain.js";
+import { IOneShotClient } from "../types/client.js";
 import { PagedResponse } from "../types/common.js";
 import {
   chainListSchema,

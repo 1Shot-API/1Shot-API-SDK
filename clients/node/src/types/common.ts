@@ -1,5 +1,6 @@
-import { pagedResponseSchema } from "../validation/common.js";
 import { z } from "zod";
+
+import { pagedResponseSchema } from "../validation/common.js";
 
 /**
  * Represents a paged response from the API.

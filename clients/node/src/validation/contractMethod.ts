@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { newSolidityStructParamSchema, solidityStructParamSchema } from "./struct.js";
+
 import { ethereumAbiSchema } from "./abi.js";
+import { newSolidityStructParamSchema, solidityStructParamSchema } from "./struct.js";
 
 // Validation for contractMethod state mutability
 export const contractMethodStateMutabilitySchema = z
