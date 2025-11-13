@@ -33,9 +33,8 @@ export const transactionSchema = z
       .describe(
         "Internal ID of the transaction. Unique identifier for tracking the execution lifecycle"
       ),
-    contractMethodId: z
-      .string()
-      .uuid()
+    contractMethodIds: z
+      .array(z.string().uuid())
       .describe(
         "ID of the Contract Method being executed. Links to the Contract Method definition that was executed"
       ),
