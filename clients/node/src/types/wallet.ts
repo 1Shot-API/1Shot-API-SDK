@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z } from "zod";
+
 import {
   accountBalanceDetailsSchema,
   walletSchema,
@@ -15,7 +16,9 @@ import {
   delegationListSchema,
   listDelegationsSchema,
   createDelegationSchema,
-} from '../validation/wallet.js';
+  getSignatureSchema,
+  signatureResponseSchema,
+} from "../validation/wallet.js";
 
 /**
  * Represents an escrow wallet in the 1Shot API.
@@ -47,3 +50,5 @@ export type Delegation = z.infer<typeof delegationSchema>;
 export type DelegationList = z.infer<typeof delegationListSchema>;
 export type ListDelegations = z.infer<typeof listDelegationsSchema>;
 export type CreateDelegation = z.infer<typeof createDelegationSchema>;
+export type GetSignature = z.infer<typeof getSignatureSchema>;
+export type SignatureResponse = z.infer<typeof signatureResponseSchema>;

@@ -1,15 +1,15 @@
-import { IOneShotClient } from '../types/client.js';
+import { IOneShotClient } from "../types/client.js";
 import {
   SolidityStruct,
   SolidityStructParamUpdateRequest,
   NewSolidityStructParam,
-} from '../types/struct.js';
+} from "../types/struct.js";
 import {
   structUpdateSchema,
   addStructParamSchema,
   updateStructParamsSchema,
   removeStructParamSchema,
-} from '../validation/struct.js';
+} from "../validation/struct.js";
 
 export class Structs {
   constructor(private client: IOneShotClient) {}
@@ -25,7 +25,7 @@ export class Structs {
     // Validate the update parameters
     const validatedData = structUpdateSchema.parse({ name });
 
-    return this.client.request<SolidityStruct>('PUT', `/structs/${structId}`, validatedData);
+    return this.client.request<SolidityStruct>("PUT", `/structs/${structId}`, validatedData);
   }
 
   /**
@@ -49,7 +49,7 @@ export class Structs {
     });
 
     return this.client.request<SolidityStruct>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/structs/${validatedParams.structId}/params`,
       validatedParams.param
     );
@@ -76,7 +76,7 @@ export class Structs {
     });
 
     return this.client.request<SolidityStruct>(
-      'PUT',
+      "PUT",
       `/business/${validatedParams.businessId}/structs/${validatedParams.structId}/params`,
       { updates: validatedParams.updates }
     );
@@ -97,7 +97,7 @@ export class Structs {
     });
 
     return this.client.request<SolidityStruct>(
-      'DELETE',
+      "DELETE",
       `/structs/${validatedParams.structId}/params/${validatedParams.structParamId}`
     );
   }

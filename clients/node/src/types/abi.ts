@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z } from "zod";
+
 import {
   abiParameterSchema,
   abiFunctionSchema,
@@ -6,7 +7,7 @@ import {
   abiConstructorSchema,
   abiFallbackSchema,
   ethereumAbiSchema,
-} from '../validation/abi.js';
+} from "../validation/abi.js";
 
 /**
  * Represents a parameter in an Ethereum ABI.

@@ -1,10 +1,11 @@
-import { ClientConfig, TokenResponse } from './types.js';
-import { ContractMethods } from './categories/contractMethods.js';
-import { Transactions } from './categories/transactions.js';
-import { Wallets } from './categories/wallets.js';
-import { Structs } from './categories/structs.js';
-import { Chains } from './categories/chains.js';
-import { IOneShotClient } from './types/client.js';
+import { Chains } from "./categories/chains.js";
+import { ContractEvents } from "./categories/contractEvents.js";
+import { ContractMethods } from "./categories/contractMethods.js";
+import { Structs } from "./categories/structs.js";
+import { Transactions } from "./categories/transactions.js";
+import { Wallets } from "./categories/wallets.js";
+import { IOneShotClient } from "./types/client.js";
+import { ClientConfig, TokenResponse } from "./types.js";
 
 export class OneShotClient implements IOneShotClient {
   private config: ClientConfig;
@@ -16,17 +17,19 @@ export class OneShotClient implements IOneShotClient {
   public readonly wallets: Wallets;
   public readonly structs: Structs;
   public readonly chains: Chains;
+  public readonly contractEvents: ContractEvents;
 
   constructor(config: ClientConfig) {
     this.config = {
       ...config,
-      baseUrl: config.baseUrl || 'https://api.1shotapi.com/v0',
+      baseUrl: config.baseUrl || "https://api.1shotapi.com/v0",
     };
     this.transactions = new Transactions(this);
     this.contractMethods = new ContractMethods(this);
     this.wallets = new Wallets(this);
     this.structs = new Structs(this);
     this.chains = new Chains(this);
+    this.contractEvents = new ContractEvents(this);
   }
 
   private async getAccessToken(): Promise<string> {
@@ -35,12 +38,12 @@ export class OneShotClient implements IOneShotClient {
     }
 
     const response = await fetch(`${this.config.baseUrl}/token`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: 'client_credentials',
+        grant_type: "client_credentials",
         client_id: this.config.apiKey,
         client_secret: this.config.apiSecret,
       }),
@@ -62,7 +65,7 @@ export class OneShotClient implements IOneShotClient {
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: body ? JSON.stringify(body) : undefined,
     });

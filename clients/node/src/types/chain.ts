@@ -1,4 +1,5 @@
-import { z } from 'zod';
+import { z } from "zod";
+
 import {
   chainInfoSchema,
   chainListSchema,
@@ -6,7 +7,7 @@ import {
   nativeCurrencyInformationSchema,
   gasFeesSchema,
   getFeesSchema,
-} from '../validation/chain.js';
+} from "../validation/chain.js";
 
 /**
  * Represents information about a chain supported by 1Shot API.

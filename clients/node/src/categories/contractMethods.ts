@@ -1,7 +1,8 @@
-import { IOneShotClient } from '../types/client.js';
-import { EthereumAbi } from '../types/abi.js';
-import { NewSolidityStructParam } from '../types/struct.js';
-import { FullPrompt } from '../types/contract.js';
+import { z } from "zod/index.js";
+
+import { EthereumAbi } from "../types/abi.js";
+import { IOneShotClient } from "../types/client.js";
+import { FullPrompt } from "../types/contract.js";
 import {
   ContractMethod,
   ContractMethodList,
@@ -13,7 +14,9 @@ import {
   ERC7702Authorization,
   ExecuteBatchContractMethod,
   ExecuteBatchAsDelegatorContractMethod,
-} from '../types/contractMethod.js';
+} from "../types/contractMethod.js";
+import { NewSolidityStructParam } from "../types/struct.js";
+import { Transaction } from "../types/transaction.js";
 import {
   contractMethodSchema,
   contractMethodListSchema,
@@ -37,10 +40,8 @@ import {
   contractMethodTestResultSchema,
   contractMethodEncodeResultSchema,
   assureContractMethodsFromPromptSchema,
-} from '../validation/contractMethod.js';
-import { Transaction } from '../types/transaction.js';
-import { transactionSchema } from '../validation/transaction.js';
-import { z } from 'zod/index.js';
+} from "../validation/contractMethod.js";
+import { transactionSchema } from "../validation/transaction.js";
 
 const listContractMethodsSchemaOptions = listContractMethodsSchema.omit({
   businessId: true,
@@ -89,7 +90,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/execute`,
       {
         params: validatedParams.params,
@@ -127,7 +128,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/executeAsDelegator`,
       {
         params: validatedParams.params,
@@ -151,7 +152,7 @@ export class ContractMethods {
   async executeBatch(params: ExecuteBatchContractMethod): Promise<Transaction> {
     const validatedParams = executeBatchContractMethodSchema.parse(params);
 
-    const response = await this.client.request<Transaction>('POST', '/methods/executeBatch', {
+    const response = await this.client.request<Transaction>("POST", "/methods/executeBatch", {
       contractMethods: validatedParams.contractMethods,
       walletId: validatedParams.walletId,
       atomic: validatedParams.atomic,
@@ -175,8 +176,8 @@ export class ContractMethods {
     const validatedParams = executeBatchAsDelegatorContractMethodSchema.parse(params);
 
     const response = await this.client.request<Transaction>(
-      'POST',
-      '/methods/executeAsDelegatorBatch',
+      "POST",
+      "/methods/executeAsDelegatorBatch",
       {
         contractMethods: validatedParams.contractMethods,
         walletId: validatedParams.walletId,
@@ -214,7 +215,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethodTestResult>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/test`,
       {
         params: validatedParams.params,
@@ -237,7 +238,7 @@ export class ContractMethods {
     const validatedParams = getContractMethodSchema.parse({ id });
 
     const response = await this.client.request<ContractMethod>(
-      'GET',
+      "GET",
       `/methods/${validatedParams.id}`
     );
 
@@ -263,7 +264,7 @@ export class ContractMethods {
 
     const queryParams = new URLSearchParams();
     Object.entries(validatedParams).forEach(([key, value]) => {
-      if (value != undefined && key != 'businessId') {
+      if (value != undefined && key != "businessId") {
         queryParams.append(key, value.toString());
       }
     });
@@ -272,7 +273,7 @@ export class ContractMethods {
       ? `/business/${validatedParams.businessId}/methods?${queryString}`
       : `/business/${validatedParams.businessId}/methods`;
 
-    const response = await this.client.request<ContractMethodList>('GET', path);
+    const response = await this.client.request<ContractMethodList>("GET", path);
 
     // Validate the response
     return contractMethodListSchema.parse(response);
@@ -301,7 +302,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethodEstimate>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/estimate`,
       {
         params: validatedParams.params,
@@ -333,7 +334,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethodEncodeResult>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/encode`,
       {
         params: validatedParams.params,
@@ -359,7 +360,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<any>(
-      'POST',
+      "POST",
       `/methods/${validatedParams.contractMethodId}/read`,
       { params: validatedParams.params }
     );
@@ -395,7 +396,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/methods`,
       validatedParams
     );
@@ -427,7 +428,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod[]>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/methods/abi`,
       validatedParams
     );
@@ -461,7 +462,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod>(
-      'PUT',
+      "PUT",
       `/methods/${validatedParams.contractMethodId}`,
       validatedParams
     );
@@ -480,7 +481,7 @@ export class ContractMethods {
       contractMethodId,
     });
 
-    await this.client.request<void>('DELETE', `/methods/${validatedParams.contractMethodId}`);
+    await this.client.request<void>("DELETE", `/methods/${validatedParams.contractMethodId}`);
   }
 
   /**
@@ -497,8 +498,8 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<FullPrompt[]>(
-      'POST',
-      '/prompts/search',
+      "POST",
+      "/prompts/search",
       validatedParams
     );
 
@@ -522,7 +523,7 @@ export class ContractMethods {
     });
 
     const response = await this.client.request<ContractMethod[]>(
-      'POST',
+      "POST",
       `/business/${validatedParams.businessId}/methods/prompt`,
       validatedParams
     );

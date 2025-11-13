@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * Schema for validating function parameters, event parameters, and struct fields
@@ -28,11 +28,11 @@ export const abiParameterSchema: z.ZodType<{
  */
 export const abiFunctionSchema = z.object({
   /** Type identifier (always 'function') */
-  type: z.literal('function'),
+  type: z.literal("function"),
   /** Name of the function */
   name: z.string(),
   /** State mutability of the function */
-  stateMutability: z.enum(['pure', 'view', 'nonpayable', 'payable']),
+  stateMutability: z.enum(["pure", "view", "nonpayable", "payable"]),
   /** Array of input parameters */
   inputs: z.array(abiParameterSchema),
   /** Array of output parameters */
@@ -44,7 +44,7 @@ export const abiFunctionSchema = z.object({
  */
 export const abiEventSchema = z.object({
   /** Type identifier (always 'event') */
-  type: z.literal('event'),
+  type: z.literal("event"),
   /** Name of the event */
   name: z.string(),
   /** Array of event parameters */
@@ -58,11 +58,11 @@ export const abiEventSchema = z.object({
  */
 export const abiConstructorSchema = z.object({
   /** Type identifier (always 'constructor') */
-  type: z.literal('constructor'),
+  type: z.literal("constructor"),
   /** Array of constructor parameters */
   inputs: z.array(abiParameterSchema),
   /** State mutability of the constructor */
-  stateMutability: z.enum(['nonpayable', 'payable']),
+  stateMutability: z.enum(["nonpayable", "payable"]),
 });
 
 /**
@@ -70,9 +70,9 @@ export const abiConstructorSchema = z.object({
  */
 export const abiFallbackSchema = z.object({
   /** Type identifier (always 'fallback') */
-  type: z.literal('fallback'),
+  type: z.literal("fallback"),
   /** State mutability of the fallback function */
-  stateMutability: z.enum(['nonpayable', 'payable']),
+  stateMutability: z.enum(["nonpayable", "payable"]),
 });
 
 /**
@@ -80,7 +80,7 @@ export const abiFallbackSchema = z.object({
  */
 export const abiErrorSchema = z.object({
   /** Type identifier (always 'error') */
-  type: z.literal('error'),
+  type: z.literal("error"),
   /** Name of the error */
   name: z.string(),
   /** Array of error parameters */
@@ -93,9 +93,9 @@ export const abiErrorSchema = z.object({
  */
 export const abiReceiveSchema = z.object({
   /** Type identifier (always 'receive') */
-  type: z.literal('receive'),
+  type: z.literal("receive"),
   /** State mutability of the receive function */
-  stateMutability: z.literal('payable'),
+  stateMutability: z.literal("payable"),
 });
 
 /**
@@ -103,7 +103,7 @@ export const abiReceiveSchema = z.object({
  * Uses a discriminated union based on the 'type' property to validate different ABI entries
  */
 export const ethereumAbiSchema = z.array(
-  z.discriminatedUnion('type', [
+  z.discriminatedUnion("type", [
     abiFunctionSchema,
     abiEventSchema,
     abiConstructorSchema,

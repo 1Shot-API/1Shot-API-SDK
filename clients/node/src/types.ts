@@ -10,4 +10,4 @@ export interface TokenResponse {
   expires_in: number;
 }
 
-export * from './categories/contractMethods';
+export * from "./categories/contractMethods";

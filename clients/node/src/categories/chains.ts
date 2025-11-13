@@ -1,12 +1,12 @@
-import { IOneShotClient } from '../types/client.js';
-import { ChainInfo, ListChains, GasFees } from '../types/chain.js';
-import { PagedResponse } from '../types/common.js';
+import { ChainInfo, ListChains, GasFees } from "../types/chain.js";
+import { IOneShotClient } from "../types/client.js";
+import { PagedResponse } from "../types/common.js";
 import {
   chainListSchema,
   listChainsSchema,
   gasFeesSchema,
   getFeesSchema,
-} from '../validation/chain.js';
+} from "../validation/chain.js";
 
 export class Chains {
   constructor(private client: IOneShotClient) {}
@@ -23,16 +23,16 @@ export class Chains {
 
     const queryParams = new URLSearchParams();
     if (validatedParams.pageSize != undefined) {
-      queryParams.append('pageSize', validatedParams.pageSize.toString());
+      queryParams.append("pageSize", validatedParams.pageSize.toString());
     }
     if (validatedParams.page != undefined) {
-      queryParams.append('page', validatedParams.page.toString());
+      queryParams.append("page", validatedParams.page.toString());
     }
 
     const queryString = queryParams.toString();
-    const path = queryString ? `/chains?${queryString}` : '/chains';
+    const path = queryString ? `/chains?${queryString}` : "/chains";
 
-    const response = await this.client.request<PagedResponse<ChainInfo>>('GET', path);
+    const response = await this.client.request<PagedResponse<ChainInfo>>("GET", path);
 
     // Validate the response
     return chainListSchema.parse(response);
@@ -51,7 +51,7 @@ export class Chains {
     });
 
     const response = await this.client.request<GasFees>(
-      'GET',
+      "GET",
       `/chains/${validatedParams.chainId}/fees`
     );
 
