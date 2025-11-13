@@ -279,3 +279,52 @@ export const deleteDelegationSchema = z
     delegationId: z.string().uuid().describe("ID of the delegation to delete"),
   })
   .describe("Parameters for deleting a delegation");
+
+// Validation for get signature parameters
+export const getSignatureSchema = z
+  .object({
+    walletId: z.string().uuid().describe("ID of the wallet to get a signature from"),
+    type: z
+      .enum(["erc3009", "permit2"])
+      .describe("The type of signature to get. Currently, only erc3009 and permit2 are supported"),
+    contractAddress: z
+      .string()
+      .describe(
+        "The contract address of the token that you are getting a signature for, such as USDC"
+      ),
+    destinationAddress: z
+      .string()
+      .describe(
+        "The address of the destination that the transfer will be sent to, such as a user's wallet address or another contract"
+      ),
+    amount: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "The amount of the token to transfer. This is in Wei, and depends on the number of decimals of the token. Make sure you know the details of the token you are transferring!"
+      ),
+    validUntil: z
+      .number()
+      .optional()
+      .nullable()
+      .describe(
+        "The timestamp until which the signature is valid. This is in seconds since the Unix epoch. For Permit2 signatures, this is the 'deadline' value"
+      ),
+    validAfter: z
+      .number()
+      .optional()
+      .nullable()
+      .describe(
+        "The timestamp after which the signature is valid. This is in seconds since the Unix epoch. This is used for Permit2 signatures and will produce an error if it is provided for ERC-3009"
+      ),
+  })
+  .describe("Parameters for getting a signature from a wallet");
+
+// Validation for signature response
+export const signatureResponseSchema = z
+  .object({
+    signature: z.string().describe("The signature of the transfer"),
+    data: z.string().describe("The actual data that was signed"),
+  })
+  .describe("The signature and the data that was signed");

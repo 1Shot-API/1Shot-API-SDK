@@ -3,7 +3,7 @@ import { z } from "zod/index.js";
 import { IOneShotClient } from "../types/client.js";
 import { PagedResponse } from "../types/common.js";
 import { Transaction } from "../types/transaction.js";
-import { Wallet, Delegation } from "../types/wallet.js";
+import { Wallet, Delegation, SignatureResponse } from "../types/wallet.js";
 import {
   walletSchema,
   walletListSchema,
@@ -18,11 +18,14 @@ import {
   listDelegationsSchema,
   createDelegationSchema,
   deleteDelegationSchema,
+  getSignatureSchema,
+  signatureResponseSchema,
 } from "../validation/wallet.js";
 
 const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
+const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
 
 export class Wallets {
   constructor(private client: IOneShotClient) {}
@@ -307,5 +310,47 @@ export class Wallets {
       "DELETE",
       `/delegation/${validatedParams.delegationId}`
     );
+  }
+
+  /**
+   * Get a signature from a wallet
+   * @param walletId The ID of the wallet to get a signature from
+   * @param type The type of signature to get (erc3009 or permit2)
+   * @param params Signature parameters including contractAddress, destinationAddress, and optional amount, validUntil, validAfter
+   * @returns Promise<SignatureResponse>
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async getSignature(
+    walletId: string,
+    type: "erc3009" | "permit2",
+    params: z.infer<typeof getSignatureSchemaOptions>
+  ): Promise<SignatureResponse> {
+    // Validate all parameters using the schema
+    const validatedParams = getSignatureSchema.parse({
+      walletId,
+      type,
+      ...params,
+    });
+
+    const queryParams = new URLSearchParams();
+    queryParams.append("contractAddress", validatedParams.contractAddress);
+    queryParams.append("destinationAddress", validatedParams.destinationAddress);
+    if (validatedParams.amount !== undefined && validatedParams.amount !== null) {
+      queryParams.append("amount", validatedParams.amount);
+    }
+    if (validatedParams.validUntil !== undefined && validatedParams.validUntil !== null) {
+      queryParams.append("validUntil", validatedParams.validUntil.toString());
+    }
+    if (validatedParams.validAfter !== undefined && validatedParams.validAfter !== null) {
+      queryParams.append("validAfter", validatedParams.validAfter.toString());
+    }
+
+    const queryString = queryParams.toString();
+    const path = `/wallets/${validatedParams.walletId}/signature/${validatedParams.type}?${queryString}`;
+
+    const response = await this.client.request<SignatureResponse>("GET", path);
+
+    // Validate the response
+    return signatureResponseSchema.parse(response);
   }
 }

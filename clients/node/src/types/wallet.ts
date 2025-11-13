@@ -16,6 +16,8 @@ import {
   delegationListSchema,
   listDelegationsSchema,
   createDelegationSchema,
+  getSignatureSchema,
+  signatureResponseSchema,
 } from "../validation/wallet.js";
 
 /**
@@ -48,3 +50,5 @@ export type Delegation = z.infer<typeof delegationSchema>;
 export type DelegationList = z.infer<typeof delegationListSchema>;
 export type ListDelegations = z.infer<typeof listDelegationsSchema>;
 export type CreateDelegation = z.infer<typeof createDelegationSchema>;
+export type GetSignature = z.infer<typeof getSignatureSchema>;
+export type SignatureResponse = z.infer<typeof signatureResponseSchema>;
