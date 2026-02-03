@@ -66,11 +66,15 @@ paths:
                     type: string
                     description: Granted scopes
         400:
-          description: Invalid request (e.g., missing parameters)
+          $ref: "#/components/responses/BadRequestError"
         401:
-          description: Invalid client credentials
+          $ref: "#/components/responses/UnauthenticatedError"
         403:
           $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
 
   /chains:
     get:
@@ -107,7 +111,11 @@ paths:
                           $ref: "#/components/schemas/ChainInfo"
                   - $ref: "#/components/schemas/PagedResponse"
 
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /chains/{chainId}/fees:
@@ -132,7 +140,11 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/GasFees"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
   
   /methods/{contractMethodId}/test:  
@@ -186,7 +198,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ContractMethodTestResult'
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /methods/{contractMethodId}/encode:  
@@ -231,10 +247,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ContractMethodEncodeResult'
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
           $ref: "#/components/responses/DatabaseError"
-
-  /methods/{contractMethodId}/estimate:  
+        503:
+          $ref: "#/components/responses/DatabaseError"
+   
+  /methods/{contractMethodId}/estimate:
     post:
       tags:
         - Contract Methods
@@ -274,10 +294,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContractMethodEstimate"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
           $ref: "#/components/responses/DatabaseError"
-   
-  /methods/{contractMethodId}/execute:  
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /methods/{contractMethodId}/execute:
     post:
       tags:
         - Contract Methods
@@ -334,7 +362,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /methods/{contractMethodId}/executeAsDelegator:  
@@ -368,7 +404,14 @@ paths:
                   description: You may include any text you like when you execute a Contract Method, as a note to yourself about why it was done. This text can be JSON or similar if you want to store formatted data.
                 delegatorAddress:
                   $ref: "#/components/schemas/AccountAddress"
-                  description: The address of the delegator on whose behalf the transaction will be executed.
+                  description: The address of the delegator on whose behalf the transaction will be executed. This delegation must be on file already; 1Shot API will use the first matching delegation for the delegator address but is not guaranteed to use the best or correct one if multiple delegations exist.
+                delegationId:
+                  $ref: "#/components/schemas/DelegationId"
+                  description: The ID of a specific delegation to use for this transaction. This is the best way to ensure that 1Shot API uses the correct delegation for the transaction.
+                delegationData:
+                  type: object
+                  $ref: "#/components/schemas/DelegationData"
+                  description: A delegation object to use for the transaction. This is treated as a one-time use delegation and not stored in 1Shot API for reuse. Not usable with delgatorAddress or delegationId.
                 authorizationList:
                   type: array
                   items:
@@ -385,8 +428,6 @@ paths:
                   format: big-number-string
                   description: The gas limit for the transaction. The transaction will revert if it uses more gas than this, and you will spend the gas in the process. Ordinarily, you do not need this, 1Shot will calculate it for you. However, for some very complicated transactions, you may need to set the gas limit manually as the normal estimation process may underestimate the gas amount.
                   example: "123400000000000000000"
-              required:
-                - delegatorAddress
       responses:
         200:
           description: "Success"
@@ -394,7 +435,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /methods/executeBatch:  
@@ -465,7 +514,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /methods/executeAsDelegatorBatch:  
@@ -498,7 +555,14 @@ paths:
                         $ref: '#/components/schemas/JSONValue'
                       delegatorAddress:
                         $ref: "#/components/schemas/AccountAddress"
-                        description: The address of the delegator on whose behalf the transaction will be executed.
+                        description: The address of the delegator on whose behalf the transaction will be executed. This delegation must be on file already; 1Shot API will use the first matching delegation for the delegator address but is not guaranteed to use the best or correct one if multiple delegations exist.
+                      delegationId:
+                        $ref: "#/components/schemas/DelegationId"
+                        description: The ID of a specific delegation to use for this transaction. This is the best way to ensure that 1Shot API uses the correct delegation for the transaction.
+                      delegationData:
+                        type: object
+                        $ref: "#/components/schemas/DelegationData"
+                        description: A delegation object to use for the transaction. This is treated as a one-time use delegation and not stored in 1Shot API for reuse. Not usable with delgatorAddress or delegationId.
                       value:
                         type: string
                         format: big-number-string
@@ -540,10 +604,14 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
           $ref: "#/components/responses/DatabaseError"
-
-  /methods/{contractMethodId}/read:  
+        503:
+          $ref: "#/components/responses/DatabaseError"
+  
+  /methods/{contractMethodId}/read:
     post:
       tags:
         - Contract Methods
@@ -734,7 +802,15 @@ paths:
                           $ref: "#/components/schemas/ContractMethod"
                   - $ref: "#/components/schemas/PagedResponse"
 
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /business/{businessId}/methods/abi:
@@ -796,7 +872,15 @@ paths:
                 items:
                   $ref: "#/components/schemas/ContractMethod"
 
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /business/{businessId}/methods/prompt:
@@ -873,8 +957,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContractMethod"
-
+        403:
+          $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     put:
@@ -927,8 +1018,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContractMethod"
-
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     delete:
@@ -949,7 +1047,15 @@ paths:
         200:
           description: "Success"
 
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /business/{businessId}/events:
@@ -1003,9 +1109,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ContractEvent"
+        400:
+          $ref: "#/components/responses/BadRequestError"
         403:
           $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     get:
@@ -1078,7 +1190,11 @@ paths:
                           $ref: "#/components/schemas/ContractEvent"
         403:
           $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /events/{contractEventId}:
@@ -1105,7 +1221,13 @@ paths:
                 $ref: "#/components/schemas/ContractEvent"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     put:
@@ -1144,7 +1266,13 @@ paths:
                 $ref: "#/components/schemas/ContractEvent"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     delete:
@@ -1242,7 +1370,13 @@ paths:
                     description: The recommended ending block number in case of excessive results.
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /business/{businessId}/transactions:
@@ -1348,8 +1482,13 @@ paths:
                         items:
                           $ref: "#/components/schemas/Transaction"
                   - $ref: "#/components/schemas/PagedResponse"
-
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /transactions/{transactionId}:
@@ -1375,7 +1514,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /business/{businessId}/wallets:
@@ -1432,6 +1579,12 @@ paths:
                   - $ref: "#/components/schemas/PagedResponse"
         403:
           $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
     post:
       tags:
         - Wallets
@@ -1476,8 +1629,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Wallet"
-
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
           
   /wallets/{walletId}:
@@ -1511,6 +1671,14 @@ paths:
                 $ref: "#/components/schemas/Wallet"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
     delete:
       tags:
         - Wallets
@@ -1540,6 +1708,14 @@ paths:
                     example: true
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
     put:
       tags:
         - Wallets
@@ -1621,8 +1797,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Transaction"
-
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /wallets/{walletId}/delegations:
@@ -1666,7 +1851,13 @@ paths:
                         items:
                           $ref: "#/components/schemas/Delegation"
                   - $ref: "#/components/schemas/PagedResponse"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
     post:
@@ -1727,7 +1918,15 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Delegation"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /wallets/{walletId}/signature/{type}:
@@ -1812,7 +2011,11 @@ paths:
           $ref: "#/components/responses/PermissionError"
         404:
           $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /wallets/{walletId}/authorizePermit2:
@@ -1856,11 +2059,17 @@ paths:
                     type: boolean
                     description: Whether the authorization was successful
                     example: true
+        400:
+          $ref: "#/components/responses/BadRequestError"
         403:
           $ref: "#/components/responses/PermissionError"
         404:
           $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /delegation/{delegationId}:
@@ -1896,7 +2105,13 @@ paths:
                     example: true
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
   
   /structs/{structId}:
@@ -1936,7 +2151,13 @@ paths:
                 $ref: "#/components/schemas/SolidityStruct"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
       
   /structs/{structId}/params:
@@ -1970,9 +2191,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SolidityStruct"
+        400:
+          $ref: "#/components/responses/BadRequestError"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
   
     put:
@@ -2020,9 +2249,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SolidityStruct"
+        400:
+          $ref: "#/components/responses/BadRequestError"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /structs/{structId}/params/{structParamId}:
@@ -2060,7 +2297,13 @@ paths:
                 $ref: "#/components/schemas/SolidityStruct"
         403:
           $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /prompts/search:
@@ -2095,7 +2338,15 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/FullPrompt"
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /x402/supported:
@@ -2143,7 +2394,11 @@ paths:
                       required:
                         - scheme
                         - network
+        403:
+          $ref: "#/components/responses/PermissionError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /x402/verify:
@@ -2229,7 +2484,15 @@ paths:
                   invalidReason: 
                     type: string
                     description: The reason, if any, that the payment is invalid. Will be empty if isValid is true.
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
   /x402/settle:
@@ -2320,7 +2583,15 @@ paths:
                 required:
                   - success
                   - networkId
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
         500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
           $ref: "#/components/responses/DatabaseError"
 
 components:
@@ -2335,14 +2606,320 @@ components:
             write:api: Write access to the API
 
   responses:
+    BadRequestError:
+      description: Bad request - invalid parameters or arguments
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            invalidParameters:
+              summary: Invalid Parameters
+              value:
+                type: "INVALID_PARAMETERS_ERROR"
+                message: "The provided parameters are invalid"
+                data: null
+                retryable: false
+            invalidType:
+              summary: Invalid Type
+              value:
+                type: "InvalidTypeError"
+                message: "Invalid type provided"
+                data: null
+                retryable: true
+            unauthorizedNonce:
+              summary: Unauthorized Nonce
+              value:
+                type: "UnauthorizedNonceError"
+                message: "The nonce provided is not authorized"
+                data: null
+                retryable: false
+    UnauthenticatedError:
+      description: Authentication required - no valid authentication token provided
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            missingToken:
+              summary: Missing Authentication Token
+              value:
+                type: "UnauthenticatedError"
+                message: "No authentication token provided or invalid"
+                data: null
+                retryable: false
+    ForbiddenError:
+      description: Forbidden - authentication token does not have permission to access this endpoint
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            insufficientPermissions:
+              summary: Insufficient Permissions
+              value:
+                type: "UnauthorizedError"
+                message: "Insufficient permissions for operation"
+                data: null
+                retryable: false
+            unknownEntity:
+              summary: Unknown Entity
+              value:
+                type: "UnknownEntityError"
+                message: "Unknown Object"
+                data: null
+                retryable: false
+            stripeError:
+              summary: Stripe Request Error
+              value:
+                type: "StripeRequestError"
+                message: "Stripe request failed"
+                data: null
+                retryable: false
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            chainTransaction:
+              summary: Chain Transaction Not Found
+              value:
+                type: "ChainTransactionError"
+                message: "Transaction not found on chain"
+                data: null
+                retryable: false
+            unknownFunction:
+              summary: Unknown Function
+              value:
+                type: "ERR_UNKNOWN_FUNCTION"
+                message: "Function not found"
+                data: null
+                retryable: false
+            deserialization:
+              summary: Deserialization Error
+              value:
+                type: "DeserializationError"
+                message: "Failed to deserialize data"
+                data: null
+                retryable: false
+    UnprocessableEntityError:
+      description: Unprocessable entity - invalid API parameters
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            invalidApiParameters:
+              summary: Invalid API Parameters
+              value:
+                type: "InvalidApiParametersError"
+                message: "Parameter walletId should be of type string, but was given '123'"
+                data:
+                  parameterType: "string"
+                  parameterName: "walletId"
+                  parameterValue: 123
+                retryable: true
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            blockchainUnavailable:
+              summary: Blockchain Unavailable
+              value:
+                type: "BLOCKCHAIN_UNAVAILABLE"
+                message: "Blockchain service is currently unavailable"
+                data: null
+                retryable: false
+            transactionError:
+              summary: Transaction Error
+              value:
+                type: "TransactionError"
+                message: "Transaction failed"
+                data: null
+                retryable: true
+            databaseError:
+              summary: Database Error
+              value:
+                type: "ERR_DATABASE"
+                message: "Database operation failed"
+                data: null
+                retryable: true
+            ethereumReadError:
+              summary: Ethereum Read Error
+              value:
+                type: "EthereumReadError"
+                message: "Failed to read from Ethereum"
+                data: null
+                retryable: true
+            ethereumWriteError:
+              summary: Ethereum Write Error
+              value:
+                type: "EthereumWriteError"
+                message: "Failed to write to Ethereum"
+                data: null
+                retryable: true
+            insufficientFunds:
+              summary: Insufficient Funds
+              value:
+                type: "ERR_INSUFFICIENT_FUNDS"
+                message: "Insufficient funds for transaction"
+                data: null
+                retryable: false
+            invalidContract:
+              summary: Invalid Contract
+              value:
+                type: "InvalidContractError"
+                message: "Invalid contract address or ABI"
+                data: null
+                retryable: false
+            gasPriceError:
+              summary: Gas Price Error
+              value:
+                type: "ERR_GAS_PRICE"
+                message: "Failed to get gas price"
+                data: null
+                retryable: false
+            gasFeeDataError:
+              summary: Gas Fee Data Error
+              value:
+                type: "GasFeeDataError"
+                message: "Failed to get gas fee data"
+                data: null
+                retryable: true
+            retryError:
+              summary: Retry Error
+              value:
+                type: "RetryError"
+                message: "Operation failed after retries"
+                data: null
+                retryable: true
+            thirdPartyError:
+              summary: Third Party Error
+              value:
+                type: "ThirdPartyError"
+                message: "Third party service error"
+                data: null
+                retryable: true
+            redisError:
+              summary: Redis Error
+              value:
+                type: "RedisError"
+                message: "Redis operation failed"
+                data: null
+                retryable: true
+            queueError:
+              summary: Queue Error
+              value:
+                type: "QueueError"
+                message: "Queue operation failed"
+                data: null
+                retryable: false
+            webhookDeliveryError:
+              summary: Webhook Delivery Error
+              value:
+                type: "ERR_WEBHOOK_DELIVERY"
+                message: "Failed to deliver webhook"
+                data: null
+                retryable: false
+    BadGatewayError:
+      description: Bad gateway - external API error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            externalApiError:
+              summary: External API Error
+              value:
+                type: "ExternalApiError"
+                message: "External API request failed"
+                data: null
+                retryable: true
+    ServiceUnavailableError:
+      description: Service unavailable - database or service temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            databaseUnavailable:
+              summary: Database Unavailable
+              value:
+                type: "ERR_DATABASE"
+                message: "Database service is temporarily unavailable"
+                data:
+                  sourceCode: "ECONNREFUSED"
+                retryable: true
     InvalidError:
       description: Data is invalid
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     PermissionError:
       description: The authentication token does not have permission to access this endpoint
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            unauthorized:
+              summary: Unauthorized Access
+              value:
+                type: "UnauthorizedError"
+                message: "Insufficient permissions for operation"
+                data: null
+                retryable: false
     DatabaseError:
       description: Database has encountered an error
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          examples:
+            databaseError:
+              summary: Database Error
+              value:
+                type: "ERR_DATABASE"
+                message: "Database operation failed"
+                data:
+                  sourceCode: "ECONNREFUSED"
+                retryable: true
 
   schemas:
+    ErrorResponse:
+      description: Standard error response format for all API errors
+      type: object
+      properties:
+        type:
+          type: string
+          description: The error type code from ErrorCodes. This is a specific identifier for the error type.
+          example: "ERR_DATABASE"
+        message:
+          type: string
+          description: Human-readable error message describing what went wrong.
+          example: "Database operation failed"
+        data:
+          description: Additional error data. This can be null, an object with error-specific fields, or any other data structure that provides context about the error.
+          nullable: true
+          example:
+            parameterType: "string"
+            parameterName: "walletId"
+            parameterValue: 123
+        retryable:
+          type: boolean
+          description: Indicates whether the error is retryable. If true, the client may retry the request. If false, retrying will not help.
+          example: true
+      required:
+        - type
+        - message
+        - retryable
+
     PageSize:
       description: The size of the page to return. Defaults to 25
       type: integer
@@ -3075,7 +3652,13 @@ components:
       format: uuid
       description: Internal ID of the Contract Method object. Contract Methods are sometimes referred to as Endpoints. A Contract Method is a single method on a smart contract.
       example: 4b4bab2d-673d-4b91-8e09-f1402962cd3e
-
+    
+    DelegationId:
+      type: string
+      format: uuid
+      description: Internal ID of a Delegation object.
+      example: 4b4bab2d-673d-4b91-8e09-f1402962cd3e
+    
     TransactionId:
       type: string
       format: uuid
@@ -3310,10 +3893,7 @@ components:
               description: Array of method names that the wallet can execute. If empty, all methods are allowed.
               example: ["mint", "transfer"]
             delegationData:
-              type: string
-              format: json-string
-              description: The actual Delegation object serialized as a JSON string. BigInts must be encoded as strings.
-              example: {"authority":"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","caveats":[],"delegate":"0x74847c451c3745fcdf4fd447a9fa5eef8a6791a9","delegator":"0x3e6a2f0CBA03d293B54c9fCF354948903007a798","salt":"0x","signature":"0x000007dc509f5f440bd07e2a51cb8dd135f170bc8886ccf24c35652d256d4f06501537e663fbb3b6e51ca640ad4791fb605ba7434d4d8a0a0a24bfd4d841e88f1c"}
+              $ref: "#/components/schemas/DelegationData"
           required:
             - id
             - businessId
@@ -3324,6 +3904,12 @@ components:
             - methods
             - delegationData
         - $ref: "#/components/schemas/EntityBookKeepingWithoutDeleted"
+
+    DelegationData:
+      type: string
+      format: json-string
+      description: The actual Delegation object serialized as a JSON string. BigInts must be encoded as strings.
+      example: {"authority":"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","caveats":[],"delegate":"0x74847c451c3745fcdf4fd447a9fa5eef8a6791a9","delegator":"0x3e6a2f0CBA03d293B54c9fCF354948903007a798","salt":"0x","signature":"0x000007dc509f5f440bd07e2a51cb8dd135f170bc8886ccf24c35652d256d4f06501537e663fbb3b6e51ca640ad4791fb605ba7434d4d8a0a0a24bfd4d841e88f1c"}
 
     ChainInfo:
       description: Information about a chain supported by 1Shot API

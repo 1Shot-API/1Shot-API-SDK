@@ -1,11 +1,13 @@
-# @uxly/1shot-client
+# @1shotapi/client-sdk
 
-This is a TypeScript client SDK for 1Shot. It provides both a strongly typed REST client and a utility method for verifying webhook signatures.
+TypeScript client SDK for the [1Shot API](https://1shotapi.com). It provides a strongly typed REST client and a utility for verifying webhook signatures.
+
+**API reference:** The M2M Gateway API is described in the [OpenAPI specification (m2mGatewaySpec.yaml)](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml).
 
 ## Installation
 
 ```bash
-npm install @uxly/1shot-client
+npm install @1shotapi/client-sdk
 ```
 
 ## Usage
@@ -13,150 +15,142 @@ npm install @uxly/1shot-client
 ### REST Client
 
 ```typescript
-import { OneShotClient } from '@uxly/1shot-client';
+import { OneShotClient } from "@1shotapi/client-sdk";
 
 // Initialize the client
 const client = new OneShotClient({
-  apiKey: 'your_api_key',
-  apiSecret: 'your_api_secret',
-  baseUrl: 'https://api.1shotapi.com/v1' // Optional, defaults to this URL
+  apiKey: "your_api_key",
+  apiSecret: "your_api_secret",
+});
+```
+
+### Contract Methods
+
+```typescript
+// List contract methods for a business (businessId first, optional filters second)
+const listResult = await client.contractMethods.list("your_business_id", {
+  page: 1,
+  pageSize: 10,
+  chainId: 1,
+  status: "live",
 });
 
-// List contractMethods for a business
-const contractMethods = await client.contractMethods.list({
-  businessId: 'your_business_id',
-  params: { page: 1, pageSize: 10 }
-});
+// Get a single contract method by ID
+const contractMethod = await client.contractMethods.get("your_contract_method_id");
 
-// Execute a Contract Method
-const transaction = await client.contractMethods.execute({
-  contractMethodId: 'your_contract_method_id',
-  params: {
-    amount: '1000000000000000000', // 1 ETH in wei
-    recipient: '0x123...'
+// Execute a contract method (contractMethodId, params, optional options)
+const transaction = await client.contractMethods.execute(
+  "your_contract_method_id",
+  {
+    amount: "1000000000000000000",
+    recipient: "0x1234567890123456789012345678901234567890",
+  },
+  {
+    walletId: "optional_wallet_id",
+    memo: "Optional note for this execution",
+    value: "0", // For payable methods
   }
+);
+
+// Read the result of a view or pure function (no transaction, no gas)
+const result = await client.contractMethods.read("your_contract_method_id", {
+  owner: "0x1234567890123456789012345678901234567890",
 });
+// result is the decoded return value (e.g. balance, token URI)
 
-// Get Contract Method details
-const contractMethod = await client.contractMethods.get('your_contract_method_id');
+// Test a contract method without executing (simulation)
+const testResult = await client.contractMethods.test(
+  "your_contract_method_id",
+  { amount: "1000000", recipient: "0x..." },
+  { value: "0" }
+);
 
-// Create a new transaction
-const newContractMethod = await client.contractMethods.create({
-  businessId: 'your_business_id',
-  params: {
-    name: 'Transfer ETH',
-    description: 'Transfer ETH to a recipient',
-    chainId: 1, // Ethereum mainnet
-    contractAddress: '0x...',
-    functionName: 'transfer',
-    stateMutability: 'nonpayable',
-    inputs: [
-      {
-        name: 'recipient',
-        type: 'address'
-      },
-      {
-        name: 'amount',
-        type: 'uint256'
-      }
-    ]
-  }
+// Estimate gas for an execution
+const estimate = await client.contractMethods.estimate(
+  "your_contract_method_id",
+  { amount: "1000000", recipient: "0x..." }
+);
+
+// Create a new contract method
+const newMethod = await client.contractMethods.create("your_business_id", {
+  chainId: 1,
+  contractAddress: "0x...",
+  walletId: "your_wallet_id",
+  name: "Transfer Tokens",
+  description: "Transfers ERC20 tokens to a recipient",
+  functionName: "transfer",
+  stateMutability: "nonpayable",
+  inputs: [
+    { name: "recipient", type: "address", index: 0 },
+    { name: "amount", type: "uint256", index: 1 },
+  ],
+  outputs: [],
 });
 ```
 
 ### Webhook Verification
 
-#### Using the Standalone Function
+#### Using the standalone function
 
 ```typescript
-import { verifyWebhook } from '@uxly/1shot-client';
-import express from 'express';
+import { verifyWebhook } from "@1shotapi/client-sdk";
+import express from "express";
 
 const app = express();
 app.use(express.json());
 
-app.post('/webhook', async (req, res) => {
-  // Get the webhook body and signature
+app.post("/webhook", async (req, res) => {
   const body = req.body;
   const signature = body.signature;
   delete body.signature;
-  
+
   if (!signature) {
-    return res.status(400).json({ error: 'Signature missing' });
+    return res.status(400).json({ error: "Signature missing" });
   }
-  
-  // Your webhook public key
-  const publicKey = 'your_webhook_public_key';
-  
+
+  const publicKey = "your_webhook_public_key";
+
   try {
-    // Verify the webhook signature
     const isValid = verifyWebhook({
       body,
       signature,
-      publicKey
+      publicKey,
     });
-    
+
     if (!isValid) {
-      return res.status(403).json({ error: 'Invalid signature' });
+      return res.status(403).json({ error: "Invalid signature" });
     }
-    
-    return res.json({ message: 'Webhook verified successfully' });
-    
+
+    return res.json({ message: "Webhook verified successfully" });
   } catch (error) {
     return res.status(403).json({ error: error.message });
   }
 });
 ```
 
+## Error handling
 
-## Error Handling
+The client can throw:
 
-The client throws errors for various conditions:
+- **RequestError** – HTTP request failures
+- **ZodError** – Invalid parameters (from schema validation)
+- **InvalidSignatureError** – Invalid webhook signatures (from `verifyWebhook`)
 
-- `RequestError` for HTTP request failures
-- `ValidationError` for invalid parameters
-- `InvalidSignatureError` for invalid webhook signatures
+## Type safety
 
-## Type Safety
-
-The client includes comprehensive TypeScript types for better IDE support and type checking. All models and responses are properly typed using TypeScript interfaces.
+All API methods and responses are typed. Models and options align with the [M2M Gateway API spec](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml).
 
 ## Publishing
 
-This package is published to npm using modern Node.js packaging tools. Here's how to publish a new version:
-
-1. Update the version in `package.json`:
-```json
-{
-  "version": "0.1.0"  // Update this to your new version
-}
-```
-
-2. Build the package:
-```bash
-npm run build
-```
-
-3. Test the build:
-```bash
-npm pack
-npm install ./uxly-1shot-client-0.1.0.tgz
-```
-
-4. Publish to npm:
-```bash
-npm publish
-```
-
-Note: You'll need to have an npm account and be logged in. You can log in using:
-```bash
-npm login
-```
+1. Bump the version in `package.json`.
+2. Build: `npm run build`
+3. Test the tarball: `npm pack` then install the generated `.tgz`.
+4. Publish: `npm publish` (after `npm login` if needed).
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome. Please open a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License – see the LICENSE file for details.
