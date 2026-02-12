@@ -13,6 +13,9 @@ export const contractEventLogSchema = z
   .object({
     eventName: z.string().describe("Name of the event that was emitted"),
     blockNumber: z.number().int().describe("Block number where the event was emitted"),
+    blockTimestamp: z
+      .number()
+      .describe("The block timestamp when the event was emitted (Unix timestamp)"),
     transactionHash: z.string().describe("Hash of the transaction that emitted the event"),
     logIndex: z.number().int().describe("Index of the log within the transaction"),
     removed: z.boolean().describe("Whether this log was removed due to chain reorganization"),

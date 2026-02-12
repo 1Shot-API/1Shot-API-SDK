@@ -4070,6 +4070,11 @@ components:
           type: integer
           description: Block number where the event was emitted
           example: 12345678
+        blockTimestamp:
+          type: number
+          format: unix-timestamp
+          description: The block timestamp when the event was emitted
+          example: 1659485172
         transactionHash:
           type: string
           description: Hash of the transaction that emitted the event
@@ -4095,6 +4100,7 @@ components:
       required:
         - eventName
         - blockNumber
+        - blockTimestamp
         - transactionHash
         - logIndex
         - removed
