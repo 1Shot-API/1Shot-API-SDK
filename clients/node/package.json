@@ -1,6 +1,6 @@
 {
   "name": "@1shotapi/client-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "TypeScript client SDK for 1Shot API. Provides a strongly typed REST client and utility methods for verifying webhook signatures.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
