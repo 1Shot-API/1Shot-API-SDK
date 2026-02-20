@@ -1987,6 +1987,12 @@ paths:
             type: number
             format: unix-timestamp
             example: 1659485172
+        - name: fromAddress
+          in: query
+          description: Optional. When set, the ERC-3009 authorization is created with this address as the "from" (token holder) instead of the server wallet. The server wallet still signs on behalf of this address. Only applicable for erc3009 signature type; ignored for permit2.
+          required: false
+          schema:
+            $ref: "#/components/schemas/AccountAddress"
       security:
         - OAuth2ClientCredentials:
           - read:api

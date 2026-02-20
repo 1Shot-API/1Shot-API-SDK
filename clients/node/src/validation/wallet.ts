@@ -318,6 +318,13 @@ export const getSignatureSchema = z
       .describe(
         "The timestamp after which the signature is valid. This is in seconds since the Unix epoch. This is used for Permit2 signatures and will produce an error if it is provided for ERC-3009"
       ),
+    fromAddress: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "Optional. When set, the ERC-3009 authorization is created with this address as the 'from' (token holder) instead of the server wallet. The server wallet still signs on behalf of this address. Only applicable for erc3009 signature type; ignored for permit2"
+      ),
   })
   .describe("Parameters for getting a signature from a wallet");
 
