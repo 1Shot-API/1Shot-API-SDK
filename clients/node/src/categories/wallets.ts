@@ -316,7 +316,7 @@ export class Wallets {
    * Get a signature from a wallet
    * @param walletId The ID of the wallet to get a signature from
    * @param type The type of signature to get (erc3009 or permit2)
-   * @param params Signature parameters including contractAddress, destinationAddress, and optional amount, validUntil, validAfter
+   * @param params Signature parameters including contractAddress, destinationAddress, and optional amount, validUntil, validAfter, fromAddress
    * @returns Promise<SignatureResponse>
    * @throws {ZodError} If the parameters are invalid
    */
@@ -343,6 +343,9 @@ export class Wallets {
     }
     if (validatedParams.validAfter !== undefined && validatedParams.validAfter !== null) {
       queryParams.append("validAfter", validatedParams.validAfter.toString());
+    }
+    if (validatedParams.fromAddress !== undefined && validatedParams.fromAddress !== null) {
+      queryParams.append("fromAddress", validatedParams.fromAddress);
     }
 
     const queryString = queryParams.toString();
