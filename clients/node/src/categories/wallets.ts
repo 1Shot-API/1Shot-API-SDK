@@ -3,7 +3,7 @@ import { z } from "zod/index.js";
 import { IOneShotClient } from "../types/client.js";
 import { PagedResponse } from "../types/common.js";
 import { Transaction } from "../types/transaction.js";
-import { Wallet, Delegation, SignatureResponse } from "../types/wallet.js";
+import { Wallet, Delegation, SignatureResponse, RedelegateResponse } from "../types/wallet.js";
 import {
   walletSchema,
   walletListSchema,
@@ -20,12 +20,15 @@ import {
   deleteDelegationSchema,
   getSignatureSchema,
   signatureResponseSchema,
+  redelegateSchema,
+  redelegateResponseSchema,
 } from "../validation/wallet.js";
 
 const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
 const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
+const redelegateSchemaOptions = redelegateSchema.omit({ delegationId: true });
 
 export class Wallets {
   constructor(private client: IOneShotClient) {}
@@ -355,5 +358,30 @@ export class Wallets {
 
     // Validate the response
     return signatureResponseSchema.parse(response);
+  }
+
+  /**
+   * Creates a redelegation from an existing delegation to a new delegate address. The escrow wallet that was the delegate of the original delegation signs the new delegation. Returns the parent and redelegation as serialized JSON strings to pass in delegationData when executing as delegator.
+   * @param delegationId The internal uuid of the delegation to redelegate from
+   * @param params Object containing delegateAddress (the new delegate address)
+   * @returns Promise<RedelegateResponse>
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async redelegate(
+    delegationId: string,
+    params: z.infer<typeof redelegateSchemaOptions>
+  ): Promise<RedelegateResponse> {
+    const validatedParams = redelegateSchema.parse({
+      delegationId,
+      ...params,
+    });
+
+    const response = await this.client.request<RedelegateResponse>(
+      "POST",
+      `/delegation/${validatedParams.delegationId}/redelegate`,
+      { delegateAddress: validatedParams.delegateAddress }
+    );
+
+    return redelegateResponseSchema.parse(response);
   }
 }
