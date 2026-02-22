@@ -335,3 +335,28 @@ export const signatureResponseSchema = z
     data: z.string().describe("The actual data that was signed"),
   })
   .describe("The signature and the data that was signed");
+
+// Validation for redelegate parameters
+export const redelegateSchema = z
+  .object({
+    delegationId: z
+      .string()
+      .uuid()
+      .describe("The internal uuid of the delegation to redelegate from"),
+    delegateAddress: z
+      .string()
+      .describe("The new delegate address (recipient of the redelegation)"),
+  })
+  .describe("Parameters for creating a redelegation from an existing delegation");
+
+// Validation for redelegate response
+export const redelegateResponseSchema = z
+  .object({
+    parent: z
+      .string()
+      .describe(
+        "The parent delegation serialized as JSON. Include this and the redelegation (in order) in delegationData when redeeming"
+      ),
+    redelegation: z.string().describe("The signed redelegation serialized as JSON"),
+  })
+  .describe("The parent and redelegation as serialized JSON strings (DelegationData)");

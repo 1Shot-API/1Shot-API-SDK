@@ -452,13 +452,39 @@ export const executeAsDelegatorContractMethodSchema = z
       ),
     delegatorAddress: z
       .string()
-      .describe("The address of the delegator on whose behalf the transaction will be executed"),
+      .optional()
+      .nullable()
+      .describe(
+        "The address of the delegator on whose behalf the transaction will be executed. This delegation must be on file already; not usable with delegationId or delegationData"
+      ),
+    delegationId: z
+      .string()
+      .uuid()
+      .optional()
+      .nullable()
+      .describe(
+        "The ID of a specific delegation to use for this transaction. This is the best way to ensure that 1Shot API uses the correct delegation. Not usable with delegatorAddress or delegationData"
+      ),
+    delegationData: z
+      .array(z.string())
+      .optional()
+      .nullable()
+      .describe(
+        "Array of delegation objects to use for the transaction, each serialized as a JSON string (BigInts must be encoded as strings). Treated as one-time use and not stored. Not usable with delegatorAddress or delegationId"
+      ),
     value: z
       .string()
       .optional()
       .nullable()
       .describe(
         "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error"
+      ),
+    gasLimit: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "The gas limit for the transaction. Ordinarily you do not need this; 1Shot will calculate it for you"
       ),
   })
   .describe(
@@ -513,6 +539,21 @@ export const batchContractMethodAsDelegatorSchema = z
     delegatorAddress: z
       .string()
       .describe("The address of the delegator on whose behalf the transaction will be executed"),
+    delegationId: z
+      .string()
+      .uuid()
+      .optional()
+      .nullable()
+      .describe(
+        "The ID of a specific delegation to use for this transaction. Not usable with delegationData"
+      ),
+    delegationData: z
+      .array(z.string())
+      .optional()
+      .nullable()
+      .describe(
+        "Array of delegation objects for this method invocation, each serialized as a JSON string (BigInts must be encoded as strings). One-time use; not usable with delegationId"
+      ),
     value: z
       .string()
       .optional()

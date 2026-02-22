@@ -409,9 +409,11 @@ paths:
                   $ref: "#/components/schemas/DelegationId"
                   description: The ID of a specific delegation to use for this transaction. This is the best way to ensure that 1Shot API uses the correct delegation for the transaction.
                 delegationData:
-                  type: object
-                  $ref: "#/components/schemas/DelegationData"
-                  description: A delegation object to use for the transaction. This is treated as a one-time use delegation and not stored in 1Shot API for reuse. Not usable with delgatorAddress or delegationId.
+                  type: array
+                  items:
+                    type: string
+                    format: json-string
+                  description: Array of delegation objects to use for the transaction, each serialized as a JSON string (BigInts must be encoded as strings). Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId.
                 authorizationList:
                   type: array
                   items:
@@ -560,9 +562,11 @@ paths:
                         $ref: "#/components/schemas/DelegationId"
                         description: The ID of a specific delegation to use for this transaction. This is the best way to ensure that 1Shot API uses the correct delegation for the transaction.
                       delegationData:
-                        type: object
-                        $ref: "#/components/schemas/DelegationData"
-                        description: A delegation object to use for the transaction. This is treated as a one-time use delegation and not stored in 1Shot API for reuse. Not usable with delgatorAddress or delegationId.
+                        type: array
+                        items:
+                          type: string
+                          format: json-string
+                        description: Array of delegation objects to use for this method invocation, each serialized as a JSON string (BigInts must be encoded as strings). Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId.
                       value:
                         type: string
                         format: big-number-string
@@ -2067,6 +2071,65 @@ paths:
                     example: true
         400:
           $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /delegation/{delegationId}/redelegate:
+    post:
+      tags:
+        - Wallets
+        - Delegations
+        - Update
+      description: Creates a redelegation from an existing delegation to a new delegate address. The escrow wallet that was the delegate of the original delegation signs the new delegation. Returns the parent and redelegation as serialized JSON strings (the form you pass in to execute as delegator).
+      parameters:
+        - name: delegationId
+          in: path
+          description: The internal uuid of the delegation to redelegate from
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: 8a6e0804-2bd0-4672-b79d-d97027f90720
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - delegateAddress
+              properties:
+                delegateAddress:
+                  $ref: "#/components/schemas/AccountAddress"
+                  description: The new delegate address (recipient of the redelegation)
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: The parent and redelegation as serialized JSON strings (DelegationData). Pass these in delegationData when executing as delegator.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - parent
+                  - redelegation
+                properties:
+                  parent:
+                    $ref: "#/components/schemas/DelegationData"
+                    description: The parent delegation serialized as JSON. Include this and the redelegation (in order) in delegationData when redeeming.
+                  redelegation:
+                    $ref: "#/components/schemas/DelegationData"
+                    description: The signed redelegation serialized as JSON.
         403:
           $ref: "#/components/responses/PermissionError"
         404:
@@ -3910,6 +3973,55 @@ components:
             - methods
             - delegationData
         - $ref: "#/components/schemas/EntityBookKeepingWithoutDeleted"
+
+    SignedDelegation:
+      description: Signed delegation object (MetaMask smart account kit / IDelegation format). Returned by the redelegate endpoint.
+      type: object
+      required:
+        - delegate
+        - delegator
+        - authority
+        - caveats
+        - salt
+        - signature
+      properties:
+        delegate:
+          $ref: "#/components/schemas/AccountAddress"
+          description: The delegate (recipient) address
+        delegator:
+          $ref: "#/components/schemas/AccountAddress"
+          description: The delegator (grantor) address
+        authority:
+          type: string
+          format: hex-string
+          description: The authority hash
+        caveats:
+          type: array
+          items:
+            type: object
+            required:
+              - enforcer
+              - terms
+              - args
+            properties:
+              enforcer:
+                $ref: "#/components/schemas/ContractAddress"
+              terms:
+                type: string
+                format: hex-string
+              args:
+                type: string
+                format: hex-string
+        salt:
+          oneOf:
+            - type: string
+              format: hex-string
+            - type: integer
+              format: int64
+        signature:
+          type: string
+          format: hex-string
+          description: The delegation signature
 
     DelegationData:
       type: string

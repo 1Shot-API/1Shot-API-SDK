@@ -116,9 +116,9 @@ export class ContractMethods {
    */
   async executeAsDelegator(
     contractMethodId: string,
-    delegatorAddress: string,
+    delegatorAddress: string | undefined,
     params: ContractMethodParams,
-    options: z.infer<typeof executeAsDelegatorContractMethodSchemaOptions>
+    options?: z.infer<typeof executeAsDelegatorContractMethodSchemaOptions>
   ): Promise<Transaction> {
     const validatedParams = executeAsDelegatorContractMethodSchema.parse({
       contractMethodId,
@@ -127,17 +127,24 @@ export class ContractMethods {
       ...options,
     });
 
+    const body: Record<string, unknown> = {
+      params: validatedParams.params,
+      walletId: validatedParams.walletId,
+      memo: validatedParams.memo,
+      authorizationList: validatedParams.authorizationList,
+      value: validatedParams.value,
+      gasLimit: validatedParams.gasLimit,
+    };
+    if (validatedParams.delegatorAddress != null)
+      body.delegatorAddress = validatedParams.delegatorAddress;
+    if (validatedParams.delegationId != null) body.delegationId = validatedParams.delegationId;
+    if (validatedParams.delegationData != null)
+      body.delegationData = validatedParams.delegationData;
+
     const response = await this.client.request<ContractMethod>(
       "POST",
       `/methods/${validatedParams.contractMethodId}/executeAsDelegator`,
-      {
-        params: validatedParams.params,
-        walletId: validatedParams.walletId,
-        memo: validatedParams.memo,
-        authorizationList: validatedParams.authorizationList,
-        delegatorAddress: validatedParams.delegatorAddress,
-        value: validatedParams.value,
-      }
+      body
     );
 
     return transactionSchema.parse(response);
