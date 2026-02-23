@@ -20,6 +20,7 @@ import {
   signatureResponseSchema,
   redelegateSchema,
   redelegateResponseSchema,
+  redelegateWithDelegationDataSchema,
 } from "../validation/wallet.js";
 
 /**
@@ -56,3 +57,4 @@ export type GetSignature = z.infer<typeof getSignatureSchema>;
 export type SignatureResponse = z.infer<typeof signatureResponseSchema>;
 export type Redelegate = z.infer<typeof redelegateSchema>;
 export type RedelegateResponse = z.infer<typeof redelegateResponseSchema>;
+export type RedelegateWithDelegationData = z.infer<typeof redelegateWithDelegationDataSchema>;

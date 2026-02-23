@@ -22,6 +22,7 @@ import {
   signatureResponseSchema,
   redelegateSchema,
   redelegateResponseSchema,
+  redelegateWithDelegationDataSchema,
 } from "../validation/wallet.js";
 
 const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
@@ -29,6 +30,9 @@ const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
 const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
 const redelegateSchemaOptions = redelegateSchema.omit({ delegationId: true });
+const redelegateWithDelegationDataSchemaOptions = redelegateWithDelegationDataSchema.omit({
+  walletId: true,
+});
 
 export class Wallets {
   constructor(private client: IOneShotClient) {}
@@ -380,6 +384,34 @@ export class Wallets {
       "POST",
       `/delegation/${validatedParams.delegationId}/redelegate`,
       { delegateAddress: validatedParams.delegateAddress }
+    );
+
+    return redelegateResponseSchema.parse(response);
+  }
+
+  /**
+   * Variant of redelegation that signs a passed-in delegation instead of looking one up by ID. The wallet (walletId) must be the delegate of the passed-in delegation; it signs the new delegation to delegateAddress. Useful for fanning out a single delegation to multiple server wallets.
+   * @param walletId The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation
+   * @param params Object containing delegationData (parent delegation as JSON string) and delegateAddress
+   * @returns Promise<RedelegateResponse>
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async redelegateWithDelegationData(
+    walletId: string,
+    params: z.infer<typeof redelegateWithDelegationDataSchemaOptions>
+  ): Promise<RedelegateResponse> {
+    const validatedParams = redelegateWithDelegationDataSchema.parse({
+      walletId,
+      ...params,
+    });
+
+    const response = await this.client.request<RedelegateResponse>(
+      "POST",
+      `/wallets/${validatedParams.walletId}/delegations/redelegate`,
+      {
+        delegationData: validatedParams.delegationData,
+        delegateAddress: validatedParams.delegateAddress,
+      }
     );
 
     return redelegateResponseSchema.parse(response);
