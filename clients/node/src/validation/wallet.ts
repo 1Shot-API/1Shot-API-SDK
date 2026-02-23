@@ -360,3 +360,23 @@ export const redelegateResponseSchema = z
     redelegation: z.string().describe("The signed redelegation serialized as JSON"),
   })
   .describe("The parent and redelegation as serialized JSON strings (DelegationData)");
+
+// Validation for redelegate with delegation data (variant that accepts parent delegation in body)
+export const redelegateWithDelegationDataSchema = z
+  .object({
+    walletId: z
+      .string()
+      .uuid()
+      .describe(
+        "The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation"
+      ),
+    delegationData: z
+      .string()
+      .describe(
+        "The parent delegation (to this wallet) serialized as a JSON string. BigInts must be encoded as strings"
+      ),
+    delegateAddress: z.string().describe("The address of the new delegate to redelegate to"),
+  })
+  .describe(
+    "Parameters for redelegation variant that signs a passed-in delegation instead of looking one up by ID"
+  );

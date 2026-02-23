@@ -1933,6 +1933,70 @@ paths:
         503:
           $ref: "#/components/responses/DatabaseError"
 
+  /wallets/{walletId}/delegations/redelegate:
+    post:
+      tags:
+        - Wallets
+        - Delegations
+      description: |
+        Variant of redelegation that signs a passed-in delegation instead of looking one up by ID.
+        Identical to POST /delegation/{delegationId}/redelegate except you supply the parent delegation in the body.
+        The wallet (walletId) must be the delegate of the passed-in delegation; it signs the new delegation to delegateAddress.
+        Very useful for fanning out a single delegation to multiple server wallets.
+      parameters:
+        - name: walletId
+          in: path
+          description: The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation
+          required: true
+          schema:
+            $ref: "#/components/schemas/WalletId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - delegationData
+                - delegateAddress
+              properties:
+                delegationData:
+                  $ref: "#/components/schemas/DelegationData"
+                  description: The parent delegation (to this wallet) serialized as a JSON string. BigInts must be encoded as strings.
+                delegateAddress:
+                  $ref: "#/components/schemas/AccountAddress"
+                  description: The address of the new delegate to redelegate to.
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: The parent and redelegation as serialized JSON strings (DelegationData). Pass these in delegationData when executing as delegator.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - parent
+                  - redelegation
+                properties:
+                  parent:
+                    $ref: "#/components/schemas/DelegationData"
+                    description: The parent delegation serialized as JSON. Include this and the redelegation (in order) in delegationData when redeeming.
+                  redelegation:
+                    $ref: "#/components/schemas/DelegationData"
+                    description: The signed redelegation serialized as JSON.
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
   /wallets/{walletId}/signature/{type}:
     get:
       tags:
