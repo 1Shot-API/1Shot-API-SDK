@@ -64,7 +64,6 @@ const executeContractMethodSchemaOptions = executeContractMethodSchema.omit({
 const executeAsDelegatorContractMethodSchemaOptions = executeAsDelegatorContractMethodSchema.omit({
   contractMethodId: true,
   params: true,
-  delegatorAddress: true,
 });
 
 export class ContractMethods {
@@ -107,22 +106,20 @@ export class ContractMethods {
   }
 
   /**
-   * Execute a contractMethod as a delegator
+   * Execute a contractMethod as a delegator. Provide exactly one of delegatorAddress, delegationId, or delegationData in options.
    * @param contractMethodId The ID of the contractMethod to execute as a delegator
    * @param params Configuration parameters for the contractMethod
-   * @param options Optional execution options
+   * @param options Optional execution options (walletId, memo, authorizationList, value, gasLimit, and one of delegatorAddress, delegationId, or delegationData)
    * @returns Promise<Transaction>
    * @throws {ZodError} If the parameters are invalid
    */
   async executeAsDelegator(
     contractMethodId: string,
-    delegatorAddress: string | undefined,
     params: ContractMethodParams,
     options?: z.infer<typeof executeAsDelegatorContractMethodSchemaOptions>
   ): Promise<Transaction> {
     const validatedParams = executeAsDelegatorContractMethodSchema.parse({
       contractMethodId,
-      delegatorAddress,
       params,
       ...options,
     });
@@ -135,11 +132,20 @@ export class ContractMethods {
       value: validatedParams.value,
       gasLimit: validatedParams.gasLimit,
     };
-    if (validatedParams.delegatorAddress != null)
+    // Only send delegation fields when they have real values (do not send undefined, null, or empty)
+    if (validatedParams.delegatorAddress != null && validatedParams.delegatorAddress !== "") {
       body.delegatorAddress = validatedParams.delegatorAddress;
-    if (validatedParams.delegationId != null) body.delegationId = validatedParams.delegationId;
-    if (validatedParams.delegationData != null)
+    }
+    if (validatedParams.delegationId != null && validatedParams.delegationId !== "") {
+      body.delegationId = validatedParams.delegationId;
+    }
+    if (
+      validatedParams.delegationData != null &&
+      Array.isArray(validatedParams.delegationData) &&
+      validatedParams.delegationData.length > 0
+    ) {
       body.delegationData = validatedParams.delegationData;
+    }
 
     const response = await this.client.request<ContractMethod>(
       "POST",
@@ -182,17 +188,49 @@ export class ContractMethods {
   ): Promise<Transaction> {
     const validatedParams = executeBatchAsDelegatorContractMethodSchema.parse(params);
 
+    // Build request body: only include delegation fields when they have real values (do not send undefined/null/empty)
+    const contractMethods = validatedParams.contractMethods.map((m) => {
+      const item: Record<string, unknown> = {
+        contractMethodId: m.contractMethodId,
+        executionIndex: m.executionIndex,
+        params: m.params,
+        delegatorAddress: m.delegatorAddress,
+      };
+      if (m.delegationId != null && m.delegationId !== "") {
+        item.delegationId = m.delegationId;
+      }
+      if (
+        m.delegationData != null &&
+        Array.isArray(m.delegationData) &&
+        m.delegationData.length > 0
+      ) {
+        item.delegationData = m.delegationData;
+      }
+      if (m.value != null && m.value !== "") {
+        item.value = m.value;
+      }
+      if (m.contractAddress != null && m.contractAddress !== "") {
+        item.contractAddress = m.contractAddress;
+      }
+      return item;
+    });
+
+    const body: Record<string, unknown> = {
+      contractMethods,
+      walletId: validatedParams.walletId,
+    };
+    if (validatedParams.atomic !== undefined) body.atomic = validatedParams.atomic;
+    if (validatedParams.memo != null && validatedParams.memo !== "")
+      body.memo = validatedParams.memo;
+    if (validatedParams.authorizationList != null && validatedParams.authorizationList.length > 0)
+      body.authorizationList = validatedParams.authorizationList;
+    if (validatedParams.gasLimit != null && validatedParams.gasLimit !== "")
+      body.gasLimit = validatedParams.gasLimit;
+
     const response = await this.client.request<Transaction>(
       "POST",
       "/methods/executeAsDelegatorBatch",
-      {
-        contractMethods: validatedParams.contractMethods,
-        walletId: validatedParams.walletId,
-        atomic: validatedParams.atomic,
-        memo: validatedParams.memo,
-        authorizationList: validatedParams.authorizationList,
-        gasLimit: validatedParams.gasLimit,
-      }
+      body
     );
 
     return transactionSchema.parse(response);

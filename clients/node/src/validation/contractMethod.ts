@@ -604,6 +604,19 @@ export const executeBatchContractMethodSchema = z
         "The gas limit for the transaction. The transaction will revert if it uses more gas than this, and you will spend the gas in the process. Ordinarily, you do not need this, 1Shot will calculate it for you. However, for some very complicated transactions, you may need to set the gas limit manually as the normal estimation process may underestimate the gas amount"
       ),
   })
+  .refine(
+    (data) => {
+      const indices = data.contractMethods.map((m) => m.executionIndex);
+      const unique = new Set(indices);
+      if (unique.size !== indices.length) return false;
+      const sorted = [...indices].sort((a, b) => a - b);
+      return sorted.every((idx, i) => idx === i);
+    },
+    {
+      message:
+        "contractMethods must have unique executionIndex values starting at 0 and incrementing by 1",
+    }
+  )
   .describe("Parameters for executing multiple contract methods in a single batch transaction");
 
 // Validation for executing batch contract methods as delegator
@@ -641,6 +654,19 @@ export const executeBatchAsDelegatorContractMethodSchema = z
         "The gas limit for the transaction. The transaction will revert if it uses more gas than this, and you will spend the gas in the process. Ordinarily, you do not need this, 1Shot will calculate it for you. However, for some very complicated transactions, you may need to set the gas limit manually as the normal estimation process may underestimate the gas amount"
       ),
   })
+  .refine(
+    (data) => {
+      const indices = data.contractMethods.map((m) => m.executionIndex);
+      const unique = new Set(indices);
+      if (unique.size !== indices.length) return false;
+      const sorted = [...indices].sort((a, b) => a - b);
+      return sorted.every((idx, i) => idx === i);
+    },
+    {
+      message:
+        "contractMethods must have unique executionIndex values starting at 0 and incrementing by 1",
+    }
+  )
   .describe(
     "Parameters for executing multiple contract methods in a single batch transaction as delegator"
   );

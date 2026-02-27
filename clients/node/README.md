@@ -1,8 +1,28 @@
 # @1shotapi/client-sdk
 
-TypeScript client SDK for the [1Shot API](https://1shotapi.com). It provides a strongly typed REST client and a utility for verifying webhook signatures.
+TypeScript client SDK for the [1Shot API](https://1shotapi.com). It provides a strongly typed REST client for the M2M (machine-to-machine) Gateway API and a utility for verifying webhook signatures.
 
-**API reference:** The M2M Gateway API is described in the [OpenAPI specification (m2mGatewaySpec.yaml)](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml).
+This README is structured as a **second source of documentation** for how 1Shot API works, with examples for each area. For the full picture, see the [official 1Shot docs](https://docs.1shotapi.com/) and the [OpenAPI specification (m2mGatewaySpec.yaml)](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml).
+
+**API reference:** The M2M Gateway API is described in the [m2mGatewaySpec.yaml](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml) in the SDK repository.
+
+---
+
+## Table of contents
+
+1. [Installation](#installation)
+2. [Quick start](#quick-start)
+3. [Server Wallets](#1-server-wallets)
+4. [Smart Contracts](#2-smart-contracts)
+5. [Executing Transactions](#3-executing-transactions)
+6. [Webhook verification](#webhook-verification)
+7. [Error handling](#error-handling)
+8. [Type safety](#type-safety)
+9. [Publishing](#publishing)
+10. [Contributing](#contributing)
+11. [License](#license)
+
+---
 
 ## Installation
 
@@ -10,87 +30,391 @@ TypeScript client SDK for the [1Shot API](https://1shotapi.com). It provides a s
 npm install @1shotapi/client-sdk
 ```
 
-## Usage
+---
 
-### REST Client
+## Quick start
 
 ```typescript
 import { OneShotClient } from "@1shotapi/client-sdk";
 
-// Initialize the client
 const client = new OneShotClient({
   apiKey: "your_api_key",
   apiSecret: "your_api_secret",
 });
+
+// Optional: use a different base URL (e.g. for staging)
+// const client = new OneShotClient({
+//   apiKey: "your_api_key",
+//   apiSecret: "your_api_secret",
+//   baseUrl: "https://api.staging.1shotapi.com/v0",
+// });
 ```
 
-### Contract Methods
+All examples below assume you have a `client` instance and a `businessId` (your 1Shot API business UUID).
+
+---
+
+## 1. Server Wallets
+
+1Shot API uses **server wallets** (escrow wallets) to sign and send transactions on your behalf. You create and manage them per business and chain.
+
+### 1.1 Create server wallet
+
+Create a new server wallet for a business on a given chain.
 
 ```typescript
-// List contract methods for a business (businessId first, optional filters second)
-const listResult = await client.contractMethods.list("your_business_id", {
-  page: 1,
-  pageSize: 10,
-  chainId: 1,
-  status: "live",
+const wallet = await client.wallets.create("your_business_id", {
+  chainId: 8453, // Base mainnet
+  name: "Payments wallet",
+  description: "Used for consumer payouts",
 });
+// wallet.id, wallet.address, wallet.chainId, etc.
+```
 
-// Get a single contract method by ID
-const contractMethod = await client.contractMethods.get("your_contract_method_id");
+### 1.2 List server wallets
 
-// Execute a contract method (contractMethodId, params, optional options)
-const transaction = await client.contractMethods.execute(
-  "your_contract_method_id",
+List wallets for a business with optional filters and pagination.
+
+```typescript
+const { response, page, pageSize, totalResults } = await client.wallets.list(
+  "your_business_id",
   {
-    amount: "1000000000000000000",
-    recipient: "0x1234567890123456789012345678901234567890",
-  },
-  {
-    walletId: "optional_wallet_id",
-    memo: "Optional note for this execution",
-    value: "0", // For payable methods
+    chainId: 8453,
+    page: 1,
+    pageSize: 20,
   }
 );
+```
 
-// Read the result of a view or pure function (no transaction, no gas)
-const result = await client.contractMethods.read("your_contract_method_id", {
-  owner: "0x1234567890123456789012345678901234567890",
+### 1.3 Update server wallet metadata
+
+Update name and description of an existing wallet.
+
+```typescript
+const updated = await client.wallets.update("your_wallet_id", {
+  name: "Updated name",
+  description: "Updated description",
 });
-// result is the decoded return value (e.g. balance, token URI)
+```
 
-// Test a contract method without executing (simulation)
-const testResult = await client.contractMethods.test(
+### 1.4 Get signatures from server wallets
+
+Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals).
+
+**EIP-3009**
+
+```typescript
+const sig = await client.wallets.getSignature(
+  "your_wallet_id",
+  "erc3009",
+  {
+    contractAddress: "0x...", // token contract
+    destinationAddress: "0x...",
+    amount: "1000000000000000000",
+  }
+);
+// sig.signature, sig.deadline, etc.
+```
+
+**Permit2**
+
+```typescript
+const sig = await client.wallets.getSignature(
+  "your_wallet_id",
+  "permit2",
+  {
+    contractAddress: "0x...",
+    destinationAddress: "0x...",
+    amount: "1000000",
+    validUntil: Math.floor(Date.now() / 1000) + 3600,
+    validAfter: 0,
+  }
+);
+```
+
+**Authorize Permit2**
+
+The API supports authorizing a wallet for Permit2 for a given token so it can perform Permit2 transfers without a new signature every time. This is `PUT /wallets/{walletId}/authorizePermit2` in the [M2M spec](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml). If the SDK does not yet expose this method, you can call the endpoint via `client.request("PUT", `/wallets/${walletId}/authorizePermit2`, { contractAddress: "0x..." })` or wait for a future SDK release.
+
+### 1.5 Delegations
+
+Delegations let another address (delegate) act on behalf of the wallet within constraints (time, contracts, methods). Useful for agent or user-scoped permissions.
+
+**Create delegation**
+
+```typescript
+const delegation = await client.wallets.createDelegation("your_wallet_id", {
+  delegationData: "<signed delegation payload from your signer>",
+  startTime: Math.floor(Date.now() / 1000),
+  endTime: Math.floor(Date.now() / 1000) + 86400 * 7, // 7 days
+  contractAddresses: ["0x..."],
+  methods: ["transfer", "approve"],
+});
+```
+
+**List delegations**
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.wallets.listDelegations("your_wallet_id", {
+    page: 1,
+    pageSize: 10,
+  });
+```
+
+**Redelegate — from stored delegation**
+
+Create a new delegation from an existing one (by ID); the current delegate signs the redelegation to a new delegate.
+
+```typescript
+const { parent, redelegation } = await client.wallets.redelegate(
+  "existing_delegation_id",
+  { delegateAddress: "0xNewDelegate..." }
+);
+// Use parent and redelegation in delegationData when executing as delegator
+```
+
+**Redelegate — from provided delegation**
+
+Same idea when you have the parent delegation as JSON instead of an ID (e.g. to fan out one delegation to many server wallets).
+
+```typescript
+const { parent, redelegation } = await client.wallets.redelegateWithDelegationData(
+  "escrow_wallet_id_that_is_current_delegate",
+  {
+    delegationData: "<parent delegation JSON string>",
+    delegateAddress: "0xNewDelegate...",
+  }
+);
+```
+
+---
+
+## 2. Smart Contracts
+
+1Shot API lets you **search** for contracts, **assure** that imported methods exist for a contract (via prompts), and work with **functions** and **events** attached to your business.
+
+### 2.1 Search smart contracts
+
+Search for contracts by natural language or identifiers; returns prompts you can use with “assure” or to import methods.
+
+```typescript
+const prompts = await client.contractMethods.search("USDC on Base", {
+  chainId: 8453,
+});
+// prompts[].promptId, prompts[].name, etc.
+```
+
+### 2.2 Assure methods associated with smart contract
+
+Ensure contract methods exist for a given contract (and optional prompt). Creates or returns the methods so you can execute or read them.
+
+```typescript
+const methods = await client.contractMethods.assureContractMethodsFromPrompt(
+  "your_business_id",
+  {
+    chainId: 8453,
+    contractAddress: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC on Base
+    walletId: "your_wallet_id",
+    promptId: "optional_prompt_uuid", // omit to use highest-ranked prompt
+  }
+);
+```
+
+### 2.3 Functions
+
+**Listing imported functions**
+
+List contract methods (imported functions) for a business with optional filters.
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.contractMethods.list("your_business_id", {
+    chainId: 8453,
+    contractAddress: "0x...",
+    page: 1,
+    pageSize: 20,
+    status: "live",
+  });
+```
+
+**Update imported function details**
+
+Update metadata or configuration of an imported contract method.
+
+```typescript
+const updated = await client.contractMethods.update("your_contract_method_id", {
+  name: "Transfer USDC",
+  description: "Sends USDC to a recipient",
+  walletId: "another_wallet_id",
+});
+```
+
+**Reading from read functions**
+
+Call view/pure functions without sending a transaction. Returns decoded result.
+
+```typescript
+const balance = await client.contractMethods.read(
+  "your_contract_method_id", // e.g. balanceOf
+  {
+    owner: "0x1234567890123456789012345678901234567890",
+  }
+);
+```
+
+**Simulating write functions**
+
+Simulate a write (or any) method without submitting a transaction. Useful for validation and gas/result estimation.
+
+```typescript
+const result = await client.contractMethods.test(
   "your_contract_method_id",
   { amount: "1000000", recipient: "0x..." },
   { value: "0" }
 );
+// result.success, result.data, etc.
+```
 
-// Estimate gas for an execution
-const estimate = await client.contractMethods.estimate(
-  "your_contract_method_id",
-  { amount: "1000000", recipient: "0x..." }
-);
+### 2.4 Events
 
-// Create a new contract method
-const newMethod = await client.contractMethods.create("your_business_id", {
-  chainId: 1,
-  contractAddress: "0x...",
-  walletId: "your_wallet_id",
-  name: "Transfer Tokens",
-  description: "Transfers ERC20 tokens to a recipient",
-  functionName: "transfer",
-  stateMutability: "nonpayable",
-  inputs: [
-    { name: "recipient", type: "address", index: 0 },
-    { name: "amount", type: "uint256", index: 1 },
-  ],
-  outputs: [],
+**Listing imported events**
+
+List contract event definitions for a business.
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.contractEvents.list("your_business_id", {
+    chainId: 8453,
+    contractAddress: "0x...",
+    page: 1,
+    pageSize: 20,
+  });
+```
+
+**Update imported event details**
+
+Update name or description of an event definition.
+
+```typescript
+const updated = await client.contractEvents.update("your_contract_event_id", {
+  name: "Transfer events",
+  description: "ERC20 Transfer(indexed from, indexed to, value)",
 });
 ```
 
-### Webhook Verification
+**Querying events with indexed arguments**
 
-#### Using the standalone function
+Query blockchain logs for an event definition, with optional block range and indexed argument filters.
+
+```typescript
+const { logs } = await client.contractEvents.searchLogs(
+  "your_contract_event_id",
+  {
+    startBlock: 12_000_000,
+    endBlock: 12_100_000,
+    topics: {
+      from: "0x1234567890123456789012345678901234567890",
+      to: "0xabcdef0123456789abcdef0123456789abcdef01",
+    },
+  }
+);
+// logs[].eventName, logs[].blockNumber, logs[].topics, etc.
+```
+
+---
+
+## 3. Executing Transactions
+
+Execution is done via **contract methods**: you call the method by ID with params and (optionally) a wallet, memo, value, etc. You can run a single call, a single call as a delegator, or batches in one transaction.
+
+### 3.1 Single execute
+
+Execute one contract method with a server wallet.
+
+```typescript
+const transaction = await client.contractMethods.execute(
+  "your_contract_method_id",
+  {
+    recipient: "0x1234567890123456789012345678901234567890",
+    amount: "1000000000000000000",
+  },
+  {
+    walletId: "your_wallet_id",
+    memo: "Payout #123",
+    value: "0",
+  }
+);
+// transaction.id, transaction.status, etc.
+```
+
+### 3.2 Delegated single execute
+
+Execute one contract method as a **delegator**: the signer of the transaction is the delegate (e.g. agent or user wallet), using a delegation you created earlier. Provide exactly one of `delegatorAddress`, `delegationId`, or `delegationData`.
+
+```typescript
+const transaction = await client.contractMethods.executeAsDelegator(
+  "your_contract_method_id",
+  { recipient: "0x...", amount: "1000000" },
+  {
+    walletId: "escrow_wallet_id",
+    delegationData: ["<parent JSON>", "<redelegation JSON>"],
+    memo: "Delegated transfer",
+  }
+);
+```
+
+### 3.3 Batch execute
+
+Execute multiple contract methods in one transaction from a single server wallet. Use `atomic: true` so the whole batch reverts if any step fails.
+
+```typescript
+const transaction = await client.contractMethods.executeBatch({
+  walletId: "your_wallet_id",
+  contractMethods: [
+    {
+      contractMethodId: "method_uuid_1",
+      executionIndex: 0,
+      params: { recipient: "0x...", amount: "100" },
+    },
+    {
+      contractMethodId: "method_uuid_2",
+      executionIndex: 1,
+      params: { spender: "0x...", amount: "200" },
+    },
+  ],
+  atomic: true,
+  memo: "Batch approval + transfer",
+});
+```
+
+### 3.4 Delegated batch execute
+
+Same as batch execute, but each item can specify delegator info so the batch runs as delegator(s).
+
+```typescript
+const transaction = await client.contractMethods.executeBatchAsDelegator({
+  walletId: "escrow_wallet_id",
+  contractMethods: [
+    {
+      contractMethodId: "method_uuid_1",
+      executionIndex: 0,
+      params: { recipient: "0x...", amount: "100" },
+      delegatorAddress: "0xDelegate...",
+      // or delegationId / delegationData
+    },
+  ],
+  atomic: true,
+});
+```
+
+---
+
+## Webhook verification
+
+1Shot API can send webhooks for transaction state changes. Verify signatures using the provided utility.
+
+### Using the standalone function
 
 ```typescript
 import { verifyWebhook } from "@1shotapi/client-sdk";
@@ -128,6 +452,8 @@ app.post("/webhook", async (req, res) => {
 });
 ```
 
+---
+
 ## Error handling
 
 The client can throw:
@@ -136,9 +462,13 @@ The client can throw:
 - **ZodError** – Invalid parameters (from schema validation)
 - **InvalidSignatureError** – Invalid webhook signatures (from `verifyWebhook`)
 
+---
+
 ## Type safety
 
 All API methods and responses are typed. Models and options align with the [M2M Gateway API spec](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml).
+
+---
 
 ## Publishing
 
@@ -147,9 +477,13 @@ All API methods and responses are typed. Models and options align with the [M2M 
 3. Test the tarball: `npm pack` then install the generated `.tgz`.
 4. Publish: `npm publish` (after `npm login` if needed).
 
+---
+
 ## Contributing
 
 Contributions are welcome. Please open a Pull Request.
+
+---
 
 ## License
 
