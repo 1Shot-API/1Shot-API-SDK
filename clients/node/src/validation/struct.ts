@@ -58,7 +58,6 @@ const baseSolidityStructParamSchema = z.object({
     .nullable()
     .describe("If the parameter is a fixed size array, set this value."),
   typeStructId: z
-    .string()
     .uuid()
     .optional()
     .nullable()
@@ -77,8 +76,8 @@ export const newSolidityStructSchema: z.ZodType = z.object({
 
 // Schema for existing Solidity structs (name is optional)
 export const solidityStructSchema: z.ZodType = z.object({
-  id: z.string().uuid().describe("Internal ID of the struct"),
-  businessId: z.string().uuid().describe("Internal ID of the business that owns this struct"),
+  id: z.uuid().describe("Internal ID of the struct"),
+  businessId: z.uuid().describe("Internal ID of the business that owns this struct"),
   params: z
     .array(z.lazy(() => solidityStructParamSchema))
     .describe("The parameters that make up the struct"),
@@ -149,8 +148,8 @@ export const newSolidityStructParamSchema = baseSolidityStructParamSchema
 // Validation for Solidity struct parameter
 export const solidityStructParamSchema = baseSolidityStructParamSchema
   .extend({
-    id: z.string().uuid().describe("Internal ID of the parameter"),
-    structId: z.string().uuid().describe("Internal ID struct that owns this parameter"),
+    id: z.uuid().describe("Internal ID of the parameter"),
+    structId: z.uuid().describe("Internal ID struct that owns this parameter"),
     typeStruct: solidityStructSchema
       .optional()
       .nullable()
@@ -266,7 +265,6 @@ export const solidityStructParamUpdateSchema: z.ZodType = z
       .nullable()
       .describe("Fixed size of the array, if applicable"),
     typeStructId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -337,8 +335,8 @@ export const solidityStructParamUpdateSchema: z.ZodType = z
 // Validation for adding a parameter to a struct
 export const addStructParamSchema = z
   .object({
-    businessId: z.string().uuid().describe("ID of the business that owns the struct"),
-    structId: z.string().uuid().describe("ID of the struct to add the parameter to"),
+    businessId: z.uuid().describe("ID of the business that owns the struct"),
+    structId: z.uuid().describe("ID of the struct to add the parameter to"),
     param: newSolidityStructParamSchema,
   })
   .describe("Parameters for adding a parameter to a struct");
@@ -346,8 +344,8 @@ export const addStructParamSchema = z
 // Validation for updating multiple struct parameters
 export const updateStructParamsSchema = z
   .object({
-    businessId: z.string().uuid().describe("ID of the business that owns the struct"),
-    structId: z.string().uuid().describe("ID of the struct to update"),
+    businessId: z.uuid().describe("ID of the business that owns the struct"),
+    structId: z.uuid().describe("ID of the struct to update"),
     updates: z.array(solidityStructParamUpdateSchema).describe("Array of parameter updates"),
   })
   .describe("Parameters for updating multiple struct parameters");
@@ -355,7 +353,7 @@ export const updateStructParamsSchema = z
 // Validation for removing a struct parameter
 export const removeStructParamSchema = z
   .object({
-    structId: z.string().uuid().describe("ID of the struct"),
-    structParamId: z.string().uuid().describe("ID of the parameter to remove"),
+    structId: z.uuid().describe("ID of the struct"),
+    structParamId: z.uuid().describe("ID of the parameter to remove"),
   })
   .describe("Parameters for removing a parameter from a struct");

@@ -22,13 +22,9 @@ export const accountBalanceDetailsSchema = z
 // Validation for wallet
 export const walletSchema = z
   .object({
-    id: z.string().uuid().describe("Internal ID of the wallet"),
+    id: z.uuid().describe("Internal ID of the wallet"),
     accountAddress: z.string().describe("Blockchain address of the wallet"),
-    businessId: z
-      .string()
-      .uuid()
-      .nullable()
-      .describe("ID of the business that owns this wallet, if any"),
+    businessId: z.uuid().nullable().describe("ID of the business that owns this wallet, if any"),
     userId: z.string().uuid().nullable().describe("ID of the user who owns this wallet, if any"),
     chainId: z
       .number()
@@ -88,7 +84,7 @@ export const walletCreateSchema = z
 // Validation for list wallets parameters
 export const listWalletsSchema = z
   .object({
-    businessId: z.string().uuid().describe("ID of the business to list wallets for"),
+    businessId: z.uuid().describe("ID of the business to list wallets for"),
     chainId: z
       .number()
       .int()
@@ -111,7 +107,7 @@ export const listWalletsSchema = z
 // Validation for create wallet parameters
 export const createWalletSchema = z
   .object({
-    businessId: z.string().uuid().describe("ID of the business to create the wallet for"),
+    businessId: z.uuid().describe("ID of the business to create the wallet for"),
     chainId: z
       .number()
       .int()
@@ -125,7 +121,7 @@ export const createWalletSchema = z
 // Validation for get wallet parameters
 export const getWalletSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to retrieve"),
+    walletId: z.uuid().describe("ID of the wallet to retrieve"),
     includeBalances: z
       .boolean()
       .optional()
@@ -137,7 +133,7 @@ export const getWalletSchema = z
 // Validation for update wallet parameters
 export const updateWalletSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to update"),
+    walletId: z.uuid().describe("ID of the wallet to update"),
     name: z.string().optional().nullable().describe("New name for the wallet"),
     description: z.string().optional().nullable().describe("New description for the wallet"),
   })
@@ -146,14 +142,14 @@ export const updateWalletSchema = z
 // Validation for delete wallet parameters
 export const deleteWalletSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to delete"),
+    walletId: z.uuid().describe("ID of the wallet to delete"),
   })
   .describe("Parameters for deleting a wallet");
 
 // Validation for wallet transfer parameters
 export const transferWalletSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to transfer funds from"),
+    walletId: z.uuid().describe("ID of the wallet to transfer funds from"),
     destinationAccountAddress: z.string().describe("The destination address to transfer funds to"),
     transferAmount: z
       .string()
@@ -169,8 +165,8 @@ export const transferWalletSchema = z
 // Validation for delegation
 export const delegationSchema = z
   .object({
-    id: z.string().uuid().describe("Internal ID of the delegation"),
-    businessId: z.string().uuid().describe("ID of the business that owns this delegation"),
+    id: z.uuid().describe("Internal ID of the delegation"),
+    businessId: z.uuid().describe("ID of the business that owns this delegation"),
     escrowWalletId: z
       .string()
       .uuid()
@@ -221,7 +217,7 @@ export const delegationListSchema = z
 // Validation for list delegations parameters
 export const listDelegationsSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to list delegations for"),
+    walletId: z.uuid().describe("ID of the wallet to list delegations for"),
     pageSize: z
       .number()
       .int()
@@ -236,7 +232,7 @@ export const listDelegationsSchema = z
 // Validation for create delegation parameters
 export const createDelegationSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to create the delegation for"),
+    walletId: z.uuid().describe("ID of the wallet to create the delegation for"),
     startTime: z
       .number()
       .optional()
@@ -276,14 +272,14 @@ export const createDelegationSchema = z
 // Validation for delete delegation parameters
 export const deleteDelegationSchema = z
   .object({
-    delegationId: z.string().uuid().describe("ID of the delegation to delete"),
+    delegationId: z.uuid().describe("ID of the delegation to delete"),
   })
   .describe("Parameters for deleting a delegation");
 
 // Validation for get signature parameters
 export const getSignatureSchema = z
   .object({
-    walletId: z.string().uuid().describe("ID of the wallet to get a signature from"),
+    walletId: z.uuid().describe("ID of the wallet to get a signature from"),
     type: z
       .enum(["erc3009", "permit2"])
       .describe("The type of signature to get. Currently, only erc3009 and permit2 are supported"),
@@ -339,10 +335,7 @@ export const signatureResponseSchema = z
 // Validation for redelegate parameters
 export const redelegateSchema = z
   .object({
-    delegationId: z
-      .string()
-      .uuid()
-      .describe("The internal uuid of the delegation to redelegate from"),
+    delegationId: z.uuid().describe("The internal uuid of the delegation to redelegate from"),
     delegateAddress: z
       .string()
       .describe("The new delegate address (recipient of the redelegation)"),
@@ -365,7 +358,6 @@ export const redelegateResponseSchema = z
 export const redelegateWithDelegationDataSchema = z
   .object({
     walletId: z
-      .string()
       .uuid()
       .describe(
         "The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation"

@@ -28,18 +28,16 @@ export const transactionStatusSchema = z
 export const transactionSchema = z
   .object({
     id: z
-      .string()
       .uuid()
       .describe(
         "Internal ID of the transaction. Unique identifier for tracking the execution lifecycle"
       ),
     contractMethodIds: z
-      .array(z.string().uuid())
+      .array(z.uuid())
       .describe(
         "ID of the Contract Method being executed. Links to the Contract Method definition that was executed"
       ),
     apiCredentialId: z
-      .string()
       .uuid()
       .nullable()
       .describe(
@@ -52,7 +50,6 @@ export const transactionSchema = z
         "API key used for execution, if any. The actual API key that was used. Will be null if executed by a user"
       ),
     userId: z
-      .string()
       .uuid()
       .nullable()
       .describe(
@@ -158,7 +155,6 @@ export const transactionListSchema = z
 export const getTransactionSchema = z
   .object({
     transactionId: z
-      .string()
       .uuid()
       .describe(
         "Execution ID of the specific transaction to retrieve. Identifies which execution to fetch"
@@ -172,7 +168,6 @@ export const getTransactionSchema = z
 export const listTransactionsSchema = z
   .object({
     businessId: z
-      .string()
       .uuid()
       .describe("ID of the business to list executions for. Used for access control and filtering"),
     pageSize: z
@@ -204,7 +199,6 @@ export const listTransactionsSchema = z
       .nullable()
       .describe("Filter executions by status. Optional parameter to filter by execution state"),
     walletId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -212,7 +206,6 @@ export const listTransactionsSchema = z
         "Filter executions by wallet ID. Optional parameter to get executions for a specific wallet"
       ),
     contractMethodId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -220,7 +213,6 @@ export const listTransactionsSchema = z
         "Filter executions by contract method ID. Optional parameter to get executions of a specific contract method"
       ),
     apiCredentialId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -228,7 +220,6 @@ export const listTransactionsSchema = z
         "Filter executions by API credential ID. Optional parameter to get executions made with a specific API key"
       ),
     userId: z
-      .string()
       .uuid()
       .optional()
       .nullable()

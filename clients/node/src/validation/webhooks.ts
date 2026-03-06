@@ -21,10 +21,10 @@ export const eWebhookStatusSchema = z
 // WebhookEndpoint schema
 export const webhookEndpointSchema = z
   .object({
-    id: z.string().uuid().describe("The WebhookEndpointId"),
-    destinationUrl: z.string().url().describe("The URL for the endpoint"),
-    businessId: z.string().uuid().nullable().describe("Business ID"),
-    userId: z.string().uuid().nullable().describe("User ID"),
+    id: z.uuid().describe("The WebhookEndpointId"),
+    destinationUrl: z.url().describe("The URL for the endpoint"),
+    businessId: z.uuid().nullable().describe("Business ID"),
+    userId: z.uuid().nullable().describe("User ID"),
     name: z.string().describe("Name for the endpoint"),
     description: z.string().describe("Description of the endpoint"),
     publicKey: z
@@ -42,16 +42,14 @@ export const webhookEndpointSchema = z
 // WebhookTrigger schema
 export const webhookTriggerSchema = z
   .object({
-    id: z.string().uuid().describe("Webhook trigger ID"),
-    endpointId: z.string().uuid().nullable().describe("Webhook endpoint ID"),
-    businessId: z.string().uuid().nullable().describe("Business ID"),
-    userId: z.string().uuid().nullable().describe("User ID"),
+    id: z.uuid().describe("Webhook trigger ID"),
+    endpointId: z.uuid().nullable().describe("Webhook endpoint ID"),
+    businessId: z.uuid().nullable().describe("Business ID"),
+    userId: z.uuid().nullable().describe("User ID"),
     name: z.string().describe("Name for the trigger"),
     description: z.string().describe("Description of the trigger"),
     events: z.array(eEventNameSchema).describe("Event names that trigger the webhook"),
-    contractMethodIds: z
-      .array(z.string().uuid())
-      .describe("Contract method IDs that trigger the webhook"),
+    contractMethodIds: z.array(z.uuid()).describe("Contract method IDs that trigger the webhook"),
     service: z.string().nullable().describe("Service identifier"),
     deleted: z.boolean().describe("Soft delete flag"),
     updated: z.number().describe("Unix timestamp of last update"),
@@ -62,8 +60,8 @@ export const webhookTriggerSchema = z
 // Webhook schema (a single generated webhook delivery)
 export const webhookSchema = z
   .object({
-    id: z.string().uuid().describe("Webhook ID"),
-    endpointId: z.string().uuid().describe("Endpoint ID"),
+    id: z.uuid().describe("Webhook ID"),
+    endpointId: z.uuid().describe("Endpoint ID"),
     eventName: z.string().describe("Event that triggered the webhook"),
     content: z.string().describe("JSON content of the webhook payload"),
     status: eWebhookStatusSchema.describe("Delivery status"),
@@ -76,8 +74,8 @@ export const webhookSchema = z
 // WebhookDeliveryAttempt schema
 export const webhookDeliveryAttemptSchema = z
   .object({
-    id: z.string().uuid().describe("Delivery attempt ID"),
-    webhookId: z.string().uuid().describe("Webhook ID"),
+    id: z.uuid().describe("Delivery attempt ID"),
+    webhookId: z.uuid().describe("Webhook ID"),
     apiVersion: z.number().int().describe("API version"),
     httpResponse: z.number().int().describe("HTTP response code"),
     clientResponse: z.string().describe("Response from client"),
@@ -96,7 +94,7 @@ export const webhookEventsResponseSchema = z
 // List triggers params
 export const listTriggersSchema = z
   .object({
-    businessId: z.string().uuid().describe("Business ID"),
+    businessId: z.uuid().describe("Business ID"),
     page: z.number().int().positive().optional().nullable(),
     pageSize: z.number().int().positive().optional().nullable(),
   })
@@ -105,16 +103,16 @@ export const listTriggersSchema = z
 // Create trigger body
 export const createTriggerSchema = z
   .object({
-    businessId: z.string().uuid().describe("Business ID"),
-    endpointId: z.string().uuid().describe("Webhook endpoint ID to trigger"),
+    businessId: z.uuid().describe("Business ID"),
+    endpointId: z.uuid().describe("Webhook endpoint ID to trigger"),
     eventNames: z.array(eEventNameSchema).describe("Event names that will trigger the webhook"),
     transactionIds: z
-      .array(z.string().uuid())
+      .array(z.uuid())
       .optional()
       .nullable()
       .describe("Transaction IDs filter (if required by API)"),
     contractMethodIds: z
-      .array(z.string().uuid())
+      .array(z.uuid())
       .optional()
       .nullable()
       .describe("Contract method IDs that will trigger the webhook"),
@@ -126,9 +124,9 @@ export const createTriggerSchema = z
 // Update trigger body
 export const updateTriggerSchema = z
   .object({
-    endpointId: z.string().uuid().optional().nullable(),
+    endpointId: z.uuid().optional().nullable(),
     eventNames: z.array(eEventNameSchema).optional().nullable(),
-    contractMethodIds: z.array(z.string().uuid()).optional().nullable(),
+    contractMethodIds: z.array(z.uuid()).optional().nullable(),
     name: z.string().optional().nullable(),
     description: z.string().optional().nullable(),
   })
@@ -147,7 +145,7 @@ export const webhookTriggerListSchema = z
 // List endpoints params
 export const listEndpointsSchema = z
   .object({
-    businessId: z.string().uuid().describe("Business ID"),
+    businessId: z.uuid().describe("Business ID"),
     page: z.number().int().positive().optional().nullable(),
     pageSize: z.number().int().positive().optional().nullable(),
   })
@@ -156,11 +154,8 @@ export const listEndpointsSchema = z
 // Create endpoint body
 export const createEndpointSchema = z
   .object({
-    businessId: z.string().uuid().describe("Business ID"),
-    destinationUrl: z
-      .string()
-      .url()
-      .describe("The URL to send the webhook to (http:// or https://)"),
+    businessId: z.uuid().describe("Business ID"),
+    destinationUrl: z.url().describe("The URL to send the webhook to (http:// or https://)"),
     name: z.string().describe("Name for the endpoint"),
     description: z.string().optional().nullable().describe("Description of the endpoint"),
   })
@@ -187,7 +182,7 @@ export const webhookEndpointListSchema = z
 // List webhooks for endpoint params
 export const listWebhooksForEndpointSchema = z
   .object({
-    webhookEndpointId: z.string().uuid().describe("Webhook endpoint ID"),
+    webhookEndpointId: z.uuid().describe("Webhook endpoint ID"),
     page: z.number().int().positive().optional().nullable(),
     pageSize: z.number().int().positive().optional().nullable(),
   })
@@ -206,7 +201,7 @@ export const webhookListSchema = z
 // List delivery attempts params
 export const listDeliveryAttemptsSchema = z
   .object({
-    webhookId: z.string().uuid().describe("Webhook ID"),
+    webhookId: z.uuid().describe("Webhook ID"),
     page: z.number().int().positive().optional().nullable(),
     pageSize: z.number().int().positive().optional().nullable(),
   })
@@ -225,14 +220,14 @@ export const webhookDeliveryAttemptListSchema = z
 // Get trigger by ID
 export const getTriggerSchema = z
   .object({
-    webhookTriggerId: z.string().uuid().describe("Webhook trigger ID"),
+    webhookTriggerId: z.uuid().describe("Webhook trigger ID"),
   })
   .describe("Parameters for getting a webhook trigger");
 
 // Get endpoint by ID
 export const getEndpointSchema = z
   .object({
-    webhookEndpointId: z.string().uuid().describe("Webhook endpoint ID"),
+    webhookEndpointId: z.uuid().describe("Webhook endpoint ID"),
   })
   .describe("Parameters for getting a webhook endpoint");
 
