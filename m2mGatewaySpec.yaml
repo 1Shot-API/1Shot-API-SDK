@@ -413,7 +413,7 @@ paths:
                   items:
                     type: string
                     format: json-string
-                  description: Array of delegation objects to use for the transaction, each serialized as a JSON string (BigInts must be encoded as strings). Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId.
+                  description: Array of delegation objects to use for the transaction, each serialized as a JSON string. Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId.
                 authorizationList:
                   type: array
                   items:
@@ -566,7 +566,7 @@ paths:
                         items:
                           type: string
                           format: json-string
-                        description: Array of delegation objects to use for this method invocation, each serialized as a JSON string (BigInts must be encoded as strings). Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId.
+                        description: Array of delegation objects to use for this method invocation, each serialized as a JSON string. Treated as one-time use and not stored in 1Shot API for reuse. Not usable with delegatorAddress or delegationId. If you are using redelegations, make sure to properly order them- Child, Parent is correct, Parent, Child will fail.
                       value:
                         type: string
                         format: big-number-string
@@ -2727,6 +2727,545 @@ paths:
         503:
           $ref: "#/components/responses/DatabaseError"
 
+  /webhooks:
+    get:
+      tags:
+        - Webhooks
+        - List
+      description: Returns information about the webhooks system- event names that can trigger webhooks.
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns an array of all event names that may trigger webhooks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EEventName"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /business/{businessId}/webhooks/triggers:
+    get:
+      tags:
+        - Webhooks
+        - Webhook Triggers
+        - List
+      description: Lists all webhook triggers for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/BusinessId"
+        - name: page
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Page"
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PageSize"
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns a page of webhook triggers for the requested business
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PagedResponse"
+                  - type: object
+                    properties:
+                      response:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WebhookTrigger"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+    post:
+      tags:
+        - Webhooks
+        - Webhook Triggers
+        - Create
+      description: Create a new webhook trigger
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - endpointId
+                - eventNames
+                - transactionIds
+                - name
+              properties:
+                endpointId:
+                  type: string
+                  format: uuid
+                  description: The webhook endpoint ID to trigger
+                eventNames:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/EEventName"
+                  description: Event names that will trigger the webhook
+                contractMethodIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: Which contract methods will trigger the webhook.
+                name:
+                  type: string
+                  description: Name for the trigger
+                description:
+                  type: string
+                  description: Description of the trigger
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns the new WebhookTrigger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookTrigger"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /webhooks/triggers/{webhookTriggerId}:
+    put:
+      tags:
+        - Webhooks
+        - Webhook Triggers
+      description: Update an existing webhook trigger
+      parameters:
+        - name: webhookTriggerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpointId:
+                  type: string
+                  format: uuid
+                eventNames:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/EEventName"
+                contractMethodIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                name:
+                  type: string
+                description:
+                  type: string
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns the updated WebhookTrigger
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookTrigger"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+    delete:
+      tags:
+        - Webhooks
+        - Webhook Triggers
+      description: Delete a webhook trigger
+      parameters:
+        - name: webhookTriggerId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /business/{businessId}/webhooks/endpoints:
+    get:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+        - List
+      description: Lists all webhook endpoints for a business
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/BusinessId"
+        - name: page
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Page"
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PageSize"
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns a page of webhook endpoints for the requested business
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PagedResponse"
+                  - type: object
+                    properties:
+                      response:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WebhookEndpoint"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+    post:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+        - Create
+      description: Create a new webhook endpoint
+      parameters:
+        - name: businessId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/BusinessId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - destinationUrl
+                - name
+              properties:
+                destinationUrl:
+                  type: string
+                  format: uri
+                  description: The URL to send the webhook to (http:// or https://)
+                name:
+                  type: string
+                  description: Name for the endpoint
+                description:
+                  type: string
+                  description: Description of the endpoint
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns the new Webhook Endpoint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpoint"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /webhooks/endpoints/{webhookEndpointId}:
+    get:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+      description: Gets a specific webhook endpoint
+      parameters:
+        - name: webhookEndpointId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns webhook endpoint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpoint"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+    put:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+      description: Update a webhook endpoint
+      parameters:
+        - name: webhookEndpointId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns the updated webhook endpoint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpoint"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+    delete:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+      description: Delete a webhook endpoint
+      parameters:
+        - name: webhookEndpointId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /webhooks/endpoints/{webhookEndpointId}/rotate:
+    put:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+      description: Rotate the private key for a webhook endpoint
+      parameters:
+        - name: webhookEndpointId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns the webhook endpoint with new public key
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookEndpoint"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /webhooks/endpoints/{webhookEndpointId}/webhooks:
+    get:
+      tags:
+        - Webhooks
+        - Webhook Endpoints
+        - List
+      description: Lists all generated webhooks for a particular endpoint. Webhooks are generated by a Webhook Trigger, and delivery may be attempted multiple times.
+      parameters:
+        - name: webhookEndpointId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Page"
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PageSize"
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns a page of webhooks for the requested webhook endpoint
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PagedResponse"
+                  - type: object
+                    properties:
+                      response:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/Webhook"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+  /webhooks/{webhookId}/attempts:
+    get:
+      tags:
+        - Webhooks
+        - Webhook Delivery Attempts
+        - List
+      description: Lists all delivery attempts for a particular webhook
+      parameters:
+        - name: webhookId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: page
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/Page"
+        - name: pageSize
+          in: query
+          required: false
+          schema:
+            $ref: "#/components/schemas/PageSize"
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Returns a page of delivery attempts for the requested webhook
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/PagedResponse"
+                  - type: object
+                    properties:
+                      response:
+                        type: array
+                        items:
+                          $ref: "#/components/schemas/WebhookDeliveryAttempt"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
 components:
   securitySchemes:
     OAuth2ClientCredentials:
@@ -3107,6 +3646,169 @@ components:
           required:
             - deleted
         - $ref: "#/components/schemas/EntityBookKeepingWithoutDeleted"
+
+    EEventName:
+      type: string
+      description: Event names that can trigger webhooks
+      enum:
+        - TransactionExecutionFailure
+        - TransactionExecutionSuccess
+        - EscrowWalletLowBalanceDetected
+        - EscrowWalletDepositConfirmed
+        - BusinessUserCreated
+        - BusinessUserDeleted
+        - InvoiceCreated
+
+    EWebhookStatus:
+      type: string
+      description: The current status of the webhook
+      enum:
+        - Unsent
+        - Success
+        - Retrying
+        - Failed
+
+    WebhookEndpoint:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: The WebhookEndpointId
+            destinationUrl:
+              type: string
+              format: uri
+              description: The URL for the endpoint
+            businessId:
+              type: string
+              format: uuid
+              nullable: true
+            userId:
+              type: string
+              format: uuid
+              nullable: true
+            name:
+              type: string
+            description:
+              type: string
+            publicKey:
+              type: string
+              description: Base64-encoded ED25519 public key for verifying webhook signatures
+            verified:
+              type: boolean
+            lastPing:
+              type: number
+              format: unix-timestamp
+              nullable: true
+            lastPingStatus:
+              type: boolean
+          required:
+            - id
+            - destinationUrl
+            - name
+            - description
+            - publicKey
+            - verified
+            - lastPingStatus
+        - $ref: "#/components/schemas/EntityBookKeeping"
+
+    WebhookTrigger:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            endpointId:
+              type: string
+              format: uuid
+              nullable: true
+            businessId:
+              type: string
+              format: uuid
+              nullable: true
+            userId:
+              type: string
+              format: uuid
+              nullable: true
+            name:
+              type: string
+            description:
+              type: string
+            events:
+              type: array
+              items:
+                $ref: "#/components/schemas/EEventName"
+            contractMethodIds:
+              type: array
+              items:
+                type: string
+                format: uuid
+            service:
+              type: string
+              nullable: true
+          required:
+            - id
+            - name
+            - description
+            - events
+        - $ref: "#/components/schemas/EntityBookKeeping"
+
+    Webhook:
+      allOf:
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            endpointId:
+              type: string
+              format: uuid
+            eventName:
+              type: string
+            content:
+              type: string
+              format: json
+            status:
+              $ref: "#/components/schemas/EWebhookStatus"
+          required:
+            - id
+            - endpointId
+            - eventName
+            - content
+            - status
+        - $ref: "#/components/schemas/EntityBookKeeping"
+
+    WebhookDeliveryAttempt:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        webhookId:
+          type: string
+          format: uuid
+        apiVersion:
+          type: integer
+        httpResponse:
+          type: integer
+        clientResponse:
+          type: string
+        signature:
+          type: string
+          format: byte
+        timestamp:
+          type: number
+          format: unix-timestamp
+      required:
+        - id
+        - webhookId
+        - apiVersion
+        - httpResponse
+        - clientResponse
+        - signature
+        - timestamp
     
     EX402Network:
       type: string
