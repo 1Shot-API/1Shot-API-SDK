@@ -15,12 +15,13 @@ This README is structured as a **second source of documentation** for how 1Shot 
 3. [Server Wallets](#1-server-wallets)
 4. [Smart Contracts](#2-smart-contracts)
 5. [Executing Transactions](#3-executing-transactions)
-6. [Webhook verification](#webhook-verification)
-7. [Error handling](#error-handling)
-8. [Type safety](#type-safety)
-9. [Publishing](#publishing)
-10. [Contributing](#contributing)
-11. [License](#license)
+6. [Webhooks](#4-webhooks)
+7. [Webhook verification](#webhook-verification)
+8. [Error handling](#error-handling)
+9. [Type safety](#type-safety)
+10. [Publishing](#publishing)
+11. [Contributing](#contributing)
+12. [License](#license)
 
 ---
 
@@ -192,7 +193,7 @@ const { parent, redelegation } = await client.wallets.redelegateWithDelegationDa
 
 ## 2. Smart Contracts
 
-1Shot API lets you **search** for contracts, **assure** that imported methods exist for a contract (via prompts), and work with **functions** and **events** attached to your business.
+1Shot API lets you **search** for contracts, **assure** that imported contract methods exist for a contract (via prompts), and work with **contract methods** and **contract events** attached to your business.
 
 ### 2.1 Search smart contracts
 
@@ -221,11 +222,11 @@ const methods = await client.contractMethods.assureContractMethodsFromPrompt(
 );
 ```
 
-### 2.3 Functions
+### 2.3 Contract Methods
 
-**Listing imported functions**
+**Listing imported contract methods**
 
-List contract methods (imported functions) for a business with optional filters.
+List contract methods for a business with optional filters.
 
 ```typescript
 const { response, page, pageSize, totalResults } =
@@ -238,7 +239,7 @@ const { response, page, pageSize, totalResults } =
   });
 ```
 
-**Update imported function details**
+**Update imported contract method details**
 
 Update metadata or configuration of an imported contract method.
 
@@ -250,9 +251,9 @@ const updated = await client.contractMethods.update("your_contract_method_id", {
 });
 ```
 
-**Reading from read functions**
+**Reading from read contract methods**
 
-Call view/pure functions without sending a transaction. Returns decoded result.
+Call view/pure contract methods without sending a transaction. Returns decoded result.
 
 ```typescript
 const balance = await client.contractMethods.read(
@@ -263,9 +264,9 @@ const balance = await client.contractMethods.read(
 );
 ```
 
-**Simulating write functions**
+**Simulating write contract methods**
 
-Simulate a write (or any) method without submitting a transaction. Useful for validation and gas/result estimation.
+Simulate a write (or any) contract method without submitting a transaction. Useful for validation and gas/result estimation.
 
 ```typescript
 const result = await client.contractMethods.test(
@@ -276,9 +277,9 @@ const result = await client.contractMethods.test(
 // result.success, result.data, etc.
 ```
 
-### 2.4 Events
+### 2.4 Contract Events
 
-**Listing imported events**
+**Listing imported contract events**
 
 List contract event definitions for a business.
 
@@ -292,9 +293,9 @@ const { response, page, pageSize, totalResults } =
   });
 ```
 
-**Update imported event details**
+**Update imported contract event details**
 
-Update name or description of an event definition.
+Update name or description of a contract event definition.
 
 ```typescript
 const updated = await client.contractEvents.update("your_contract_event_id", {
@@ -303,9 +304,9 @@ const updated = await client.contractEvents.update("your_contract_event_id", {
 });
 ```
 
-**Querying events with indexed arguments**
+**Querying contract events with indexed arguments**
 
-Query blockchain logs for an event definition, with optional block range and indexed argument filters.
+Query blockchain logs for a contract event definition, with optional block range and indexed argument filters.
 
 ```typescript
 const { logs } = await client.contractEvents.searchLogs(
@@ -406,6 +407,155 @@ const transaction = await client.contractMethods.executeBatchAsDelegator({
   ],
   atomic: true,
 });
+```
+
+---
+
+## 4. Webhooks
+
+1Shot API lets you manage **webhook endpoints** (URLs that receive payloads) and **webhook triggers** (rules that decide when to send those payloads). You can list event names, create and update endpoints and triggers, rotate endpoint keys, and inspect generated webhooks and delivery attempts.
+
+### 4.1 Get available webhook event names
+
+List event names that may trigger webhooks (e.g. `TransactionExecutionSuccess`, `TransactionExecutionFailure`).
+
+```typescript
+const { events } = await client.webhooks.getEvents();
+// events: ("TransactionExecutionFailure" | "TransactionExecutionSuccess" | ...)[]
+```
+
+### 4.2 Webhook triggers
+
+**List webhook triggers**
+
+List all triggers for a business with optional pagination.
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.webhooks.listTriggers("your_business_id", {
+    page: 1,
+    pageSize: 25,
+  });
+```
+
+**Create webhook trigger**
+
+Create a trigger that sends webhooks to an endpoint when certain events occur. Optionally restrict by contract method IDs.
+
+```typescript
+const trigger = await client.webhooks.createTrigger("your_business_id", {
+  endpointId: "your_webhook_endpoint_id",
+  eventNames: ["TransactionExecutionSuccess", "TransactionExecutionFailure"],
+  name: "Transaction notifications",
+  description: "Notify on success or failure",
+  contractMethodIds: ["method_uuid_1", "method_uuid_2"], // optional
+});
+```
+
+**Update webhook trigger**
+
+Update an existing trigger’s endpoint, events, name, or description.
+
+```typescript
+const updated = await client.webhooks.updateTrigger("your_webhook_trigger_id", {
+  eventNames: ["TransactionExecutionSuccess"],
+  name: "Success only",
+});
+```
+
+**Delete webhook trigger**
+
+```typescript
+const { success } = await client.webhooks.deleteTrigger("your_webhook_trigger_id");
+```
+
+### 4.3 Webhook endpoints
+
+**List webhook endpoints**
+
+List all endpoints for a business (the URLs that receive webhook payloads).
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.webhooks.listEndpoints("your_business_id", {
+    page: 1,
+    pageSize: 25,
+  });
+```
+
+**Create webhook endpoint**
+
+Register a URL to receive webhooks. The response includes a `publicKey` for verifying signatures.
+
+```typescript
+const endpoint = await client.webhooks.createEndpoint("your_business_id", {
+  destinationUrl: "https://your-app.com/webhooks/1shot",
+  name: "Production webhook",
+  description: "Receives transaction and balance events",
+});
+// endpoint.id, endpoint.publicKey, endpoint.destinationUrl, etc.
+```
+
+**Get webhook endpoint**
+
+Fetch a single endpoint by ID.
+
+```typescript
+const endpoint = await client.webhooks.getEndpoint("your_webhook_endpoint_id");
+```
+
+**Update webhook endpoint**
+
+Update name or description (URL cannot be changed).
+
+```typescript
+const updated = await client.webhooks.updateEndpoint("your_webhook_endpoint_id", {
+  name: "Production (primary)",
+  description: "Updated description",
+});
+```
+
+**Delete webhook endpoint**
+
+```typescript
+const { success } = await client.webhooks.deleteEndpoint("your_webhook_endpoint_id");
+```
+
+**Rotate webhook endpoint key**
+
+Rotate the private key for an endpoint. Returns the endpoint with a new `publicKey`; use it to verify future webhook signatures.
+
+```typescript
+const endpoint = await client.webhooks.rotateEndpointKey("your_webhook_endpoint_id");
+// endpoint.publicKey is the new key; update your verification config
+```
+
+### 4.4 Webhook deliveries and attempts
+
+**List webhooks for an endpoint**
+
+List generated webhook deliveries for a specific endpoint (with optional pagination).
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.webhooks.listWebhooksForEndpoint("your_webhook_endpoint_id", {
+    page: 1,
+    pageSize: 25,
+  });
+// response[].id, response[].eventName, response[].content, response[].status
+```
+
+**List delivery attempts for a webhook**
+
+List delivery attempts for a single webhook (e.g. to debug failures).
+
+```typescript
+const { response, page, pageSize, totalResults } =
+  await client.webhooks.listDeliveryAttempts("your_webhook_id", {
+    page: 1,
+    pageSize: 25,
+  });
+// response[].httpResponse, response[].clientResponse, response[].timestamp
 ```
 
 ---
