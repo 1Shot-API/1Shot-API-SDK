@@ -133,7 +133,6 @@ export const contractMethodUpdateSchema = z
         "The state mutability of the Solidity function. Determines if the function can modify state, receive native tokens, or only read data"
       ),
     callbackUrl: z
-      .string()
       .url()
       .nullable()
       .optional()
@@ -149,13 +148,11 @@ export const contractMethodUpdateSchema = z
 export const contractMethodSchema = z
   .object({
     id: z
-      .string()
       .uuid()
       .describe(
         "Internal ID of the contractMethod object. Unique identifier for the contractMethod"
       ),
     businessId: z
-      .string()
       .uuid()
       .describe(
         "The business that owns this contractMethod. Used for access control and organization"
@@ -171,7 +168,6 @@ export const contractMethodSchema = z
       .string()
       .describe("The address of the smart contract that contains the function to be called"),
     walletId: z
-      .string()
       .uuid()
       .describe(
         "The default escrow wallet that will execute this ContractMethod. Must be for the same chainId as the contractMethod"
@@ -203,21 +199,18 @@ export const contractMethodSchema = z
       ),
     stateMutability: contractMethodStateMutabilitySchema,
     promptId: z
-      .string()
       .uuid()
       .nullable()
       .describe(
         "The ID of the Prompt that this contractMethod was created from. This is optional, and a ContractMethod can drift from the original Prompt but retain this association"
       ),
     callbackUrl: z
-      .string()
       .url()
       .nullable()
       .describe(
         "The current destination for webhooks to be sent when this contractMethod is executed. Will be null if no webhook is assigned. Used for contractMethod status notifications"
       ),
     publicKey: z
-      .string()
       .base64()
       .nullable()
       .describe(
@@ -268,7 +261,6 @@ export const contractMethodListSchema = z
 export const listContractMethodsSchema = z
   .object({
     businessId: z
-      .string()
       .uuid()
       .describe(
         "The business ID to list contractMethods for. Used for access control and filtering"
@@ -318,7 +310,6 @@ export const listContractMethodsSchema = z
         "Filter by contract address. Optional parameter to get contractMethods for a specific contract"
       ),
     promptId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -368,12 +359,10 @@ export const erc7702AuthorizationSchema = z
 export const executeContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe("The ID of the contractMethod to execute. Identifies which contractMethod to run"),
     params: contractMethodParamsSchema,
     walletId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -429,7 +418,6 @@ export const executeAsDelegatorContractMethodSchema = z
       ),
     params: contractMethodParamsSchema,
     walletId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -458,7 +446,6 @@ export const executeAsDelegatorContractMethodSchema = z
         "The address of the delegator on whose behalf the transaction will be executed. This delegation must be on file already; not usable with delegationId or delegationData"
       ),
     delegationId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -495,7 +482,6 @@ export const executeAsDelegatorContractMethodSchema = z
 export const batchContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe("The ID of the contractMethod to execute. Identifies which contractMethod to run"),
     executionIndex: z
@@ -525,7 +511,6 @@ export const batchContractMethodSchema = z
 export const batchContractMethodAsDelegatorSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe("The ID of the contractMethod to execute. Identifies which contractMethod to run"),
     executionIndex: z
@@ -540,7 +525,6 @@ export const batchContractMethodAsDelegatorSchema = z
       .string()
       .describe("The address of the delegator on whose behalf the transaction will be executed"),
     delegationId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -675,7 +659,6 @@ export const executeBatchAsDelegatorContractMethodSchema = z
 export const testContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to test. Identifies which contractMethod to simulate"
@@ -709,7 +692,6 @@ export const testContractMethodSchema = z
 export const getContractMethodSchema = z
   .object({
     id: z
-      .string()
       .uuid()
       .describe("The ID of the contractMethod to get. Identifies which contractMethod to retrieve"),
   })
@@ -721,7 +703,6 @@ export const getContractMethodSchema = z
 export const estimateContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to estimate. Identifies which contractMethod to analyze"
@@ -750,7 +731,6 @@ export const estimateContractMethodSchema = z
 export const encodeContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to encode. Identifies which contractMethod to encode"
@@ -779,7 +759,6 @@ export const encodeContractMethodSchema = z
 export const readContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe("The ID of the contractMethod to read. Identifies which contractMethod to query"),
     params: contractMethodParamsSchema,
@@ -792,7 +771,6 @@ export const readContractMethodSchema = z
 export const createContractMethodSchema = z
   .object({
     businessId: z
-      .string()
       .uuid()
       .describe(
         "The business ID to create the contractMethod for. Used for access control and organization"
@@ -808,7 +786,6 @@ export const createContractMethodSchema = z
       .string()
       .describe("The address of the smart contract that contains the function to be called"),
     walletId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the escrow wallet that will execute the contractMethod. This escrow wallet must be for the same chainId as the contractMethod you are creating"
@@ -840,7 +817,6 @@ export const createContractMethodSchema = z
         "The output parameters for the contractMethod function. Defines the structure and types of values returned after execution"
       ),
     callbackUrl: z
-      .string()
       .url()
       .optional()
       .nullable()
@@ -867,7 +843,6 @@ export const importFromABISchema = z
       .string()
       .describe("The address of the smart contract that contains the function to be called"),
     walletId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the escrow wallet that will execute the contractMethod. Must be for the same chainId as the contractMethod"
@@ -893,7 +868,6 @@ export const importFromABISchema = z
 export const updateContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to update. Identifies which contractMethod to modify"
@@ -908,7 +882,6 @@ export const updateContractMethodSchema = z
 export const deleteContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to delete. Identifies which contractMethod to remove"
@@ -922,7 +895,6 @@ export const deleteContractMethodSchema = z
 export const restoreContractMethodSchema = z
   .object({
     contractMethodId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the contractMethod to restore. Identifies which deleted contractMethod to recover"
@@ -982,7 +954,7 @@ export const contractFunctionPromptSchema = z
 // Validation for contract description
 export const promptSchema = z
   .object({
-    id: z.string().uuid().describe("internal ID of the contract description"),
+    id: z.uuid().describe("internal ID of the contract description"),
     userId: z.string().uuid().describe("ID of the user that created"),
     chainId: z
       .number()
@@ -1041,7 +1013,6 @@ export const contractSearchSchema = z
 export const contractContractMethodsSchema = z
   .object({
     businessId: z
-      .string()
       .uuid()
       .describe(
         "The business ID to create the contractMethods for. Used for access control and organization"
@@ -1057,13 +1028,11 @@ export const contractContractMethodsSchema = z
       .string()
       .describe("The address of the smart contract that contains the functions to be imported"),
     walletId: z
-      .string()
       .uuid()
       .describe(
         "The ID of the escrow wallet that will execute the contractMethods. Must be for the same chainId as the contractMethods"
       ),
     promptId: z
-      .string()
       .uuid()
       .optional()
       .nullable()
@@ -1080,13 +1049,13 @@ export const contractMethodTestResultSchema = z
   .object({
     success: z.boolean().describe("Whether or not the contractMethod would run successfully"),
     result: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .nullable()
       .describe(
         "The result returned by the contractMethod, if it was successful. When running a test, no changes are made on the blockchain, so these results are hypothetical"
       ),
     error: z
-      .record(z.any())
+      .record(z.string(), z.any())
       .nullable()
       .describe("The error that occurred, if the contractMethod was not successful"),
   })
@@ -1114,7 +1083,6 @@ export const assureContractMethodsFromPromptSchema = z
     contractAddress: z.string().describe("Address of the smart contract"),
     walletId: z.string().uuid().describe("ID of the wallet that will execute the contract methods"),
     promptId: z
-      .string()
       .uuid()
       .optional()
       .nullable()

@@ -19,7 +19,7 @@ export const contractEventLogSchema = z
     transactionHash: z.string().describe("Hash of the transaction that emitted the event"),
     logIndex: z.number().int().describe("Index of the log within the transaction"),
     removed: z.boolean().describe("Whether this log was removed due to chain reorganization"),
-    topics: z.record(z.string()).describe("Decoded event arguments by parameter name"),
+    topics: z.record(z.string(), z.string()).describe("Decoded event arguments by parameter name"),
   })
   .describe("A contract event log from the blockchain");
 
@@ -131,7 +131,7 @@ export const searchContractEventLogsSchema = z
       .describe("Starting block number to search from"),
     endBlock: z.number().int().optional().nullable().describe("Ending block number to search to"),
     topics: z
-      .record(z.string())
+      .record(z.string(), z.string())
       .optional()
       .nullable()
       .describe("Filter by indexed event parameters"),

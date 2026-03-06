@@ -4,6 +4,7 @@ import { ContractMethods } from "./categories/contractMethods.js";
 import { Structs } from "./categories/structs.js";
 import { Transactions } from "./categories/transactions.js";
 import { Wallets } from "./categories/wallets.js";
+import { Webhooks } from "./categories/webhooks.js";
 import { IOneShotClient } from "./types/client.js";
 import { ClientConfig, TokenResponse } from "./types.js";
 
@@ -18,6 +19,7 @@ export class OneShotClient implements IOneShotClient {
   public readonly structs: Structs;
   public readonly chains: Chains;
   public readonly contractEvents: ContractEvents;
+  public readonly webhooks: Webhooks;
 
   constructor(config: ClientConfig) {
     this.config = {
@@ -30,6 +32,7 @@ export class OneShotClient implements IOneShotClient {
     this.structs = new Structs(this);
     this.chains = new Chains(this);
     this.contractEvents = new ContractEvents(this);
+    this.webhooks = new Webhooks(this);
   }
 
   private async getAccessToken(): Promise<string> {
