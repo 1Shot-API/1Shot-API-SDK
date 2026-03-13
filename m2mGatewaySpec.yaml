@@ -4696,7 +4696,7 @@ components:
               example: 8a6e0804-2bd0-4672-b79d-d97027f90720
             businessId:
               $ref: "#/components/schemas/BusinessId"
-            escrowWalletId:
+            walletId:
               $ref: "#/components/schemas/WalletId"
             delegatorAddress:
               type: string
@@ -4732,7 +4732,7 @@ components:
           required:
             - id
             - businessId
-            - escrowWalletId
+            - walletId
             - startTime
             - endTime
             - contractAddresses

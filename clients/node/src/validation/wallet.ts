@@ -167,10 +167,7 @@ export const delegationSchema = z
   .object({
     id: z.uuid().describe("Internal ID of the delegation"),
     businessId: z.uuid().describe("ID of the business that owns this delegation"),
-    escrowWalletId: z
-      .string()
-      .uuid()
-      .describe("ID of the escrow wallet that can execute transactions"),
+    walletId: z.uuid().describe("ID of the wallet that can execute transactions"),
     delegatorAddress: z.string().describe("The address of the delegator account"),
     startTime: z
       .number()
@@ -332,6 +329,23 @@ export const signatureResponseSchema = z
   })
   .describe("The signature and the data that was signed");
 
+// Validation for authorize Permit2 parameters
+export const authorizePermit2Schema = z
+  .object({
+    walletId: z.uuid().describe("ID of the wallet to authorize Permit2 for"),
+    contractAddress: z
+      .string()
+      .describe("The contract address of the token to authorize Permit2 for"),
+  })
+  .describe("Parameters for authorizing Permit2 for a wallet");
+
+// Validation for authorize Permit2 response
+export const authorizePermit2ResponseSchema = z
+  .object({
+    success: z.boolean().describe("Whether the authorization was successful"),
+  })
+  .describe("Response from authorizing Permit2 for a wallet");
+
 // Validation for redelegate parameters
 export const redelegateSchema = z
   .object({
@@ -360,7 +374,7 @@ export const redelegateWithDelegationDataSchema = z
     walletId: z
       .uuid()
       .describe(
-        "The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation"
+        "The internal uuid of the wallet that is the delegate of the passed-in delegation and will sign the redelegation"
       ),
     delegationData: z
       .string()
