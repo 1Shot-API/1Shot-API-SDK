@@ -20,6 +20,8 @@ import {
   deleteDelegationSchema,
   getSignatureSchema,
   signatureResponseSchema,
+  authorizePermit2Schema,
+  authorizePermit2ResponseSchema,
   redelegateSchema,
   redelegateResponseSchema,
   redelegateWithDelegationDataSchema,
@@ -29,6 +31,7 @@ const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
 const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
+const authorizePermit2SchemaOptions = authorizePermit2Schema.omit({ walletId: true });
 const redelegateSchemaOptions = redelegateSchema.omit({ delegationId: true });
 const redelegateWithDelegationDataSchemaOptions = redelegateWithDelegationDataSchema.omit({
   walletId: true,
@@ -365,7 +368,34 @@ export class Wallets {
   }
 
   /**
-   * Creates a redelegation from an existing delegation to a new delegate address. The escrow wallet that was the delegate of the original delegation signs the new delegation. Returns the parent and redelegation as serialized JSON strings to pass in delegationData when executing as delegator.
+   * Authorize Permit2 for a wallet. This allows the wallet to use Permit2 transfers without requiring individual signatures for each transaction.
+   * @param walletId The ID of the wallet to authorize Permit2 for
+   * @param params Object containing contractAddress (the token contract to authorize)
+   * @returns Promise<{ success: boolean }>
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async authorizePermit2(
+    walletId: string,
+    params: z.infer<typeof authorizePermit2SchemaOptions>
+  ): Promise<{ success: boolean }> {
+    const validatedParams = authorizePermit2Schema.parse({
+      walletId,
+      ...params,
+    });
+
+    const response = await this.client.request<{ success: boolean }>(
+      "PUT",
+      `/wallets/${validatedParams.walletId}/authorizePermit2`,
+      {
+        contractAddress: validatedParams.contractAddress,
+      }
+    );
+
+    return authorizePermit2ResponseSchema.parse(response);
+  }
+
+  /**
+   * Creates a redelegation from an existing delegation to a new delegate address. The wallet that was the delegate of the original delegation signs the new delegation. Returns the parent and redelegation as serialized JSON strings to pass in delegationData when executing as delegator.
    * @param delegationId The internal uuid of the delegation to redelegate from
    * @param params Object containing delegateAddress (the new delegate address)
    * @returns Promise<RedelegateResponse>
@@ -391,7 +421,7 @@ export class Wallets {
 
   /**
    * Variant of redelegation that signs a passed-in delegation instead of looking one up by ID. The wallet (walletId) must be the delegate of the passed-in delegation; it signs the new delegation to delegateAddress. Useful for fanning out a single delegation to multiple server wallets.
-   * @param walletId The internal uuid of the escrow wallet that is the delegate of the passed-in delegation and will sign the redelegation
+   * @param walletId The internal uuid of the wallet that is the delegate of the passed-in delegation and will sign the redelegation
    * @param params Object containing delegationData (parent delegation as JSON string) and delegateAddress
    * @returns Promise<RedelegateResponse>
    * @throws {ZodError} If the parameters are invalid

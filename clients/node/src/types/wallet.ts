@@ -24,8 +24,8 @@ import {
 } from "../validation/wallet.js";
 
 /**
- * Represents an escrow wallet in the 1Shot API.
- * An escrow wallet is a wallet that the platform holds keys for.
+ * Represents a serverwallet in the 1Shot API.
+ * A wallet is a wallet that the platform holds keys for.
  */
 export type Wallet = z.infer<typeof walletSchema>;
 

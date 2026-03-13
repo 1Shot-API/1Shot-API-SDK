@@ -170,7 +170,7 @@ export const contractMethodSchema = z
     walletId: z
       .uuid()
       .describe(
-        "The default escrow wallet that will execute this ContractMethod. Must be for the same chainId as the contractMethod"
+        "The default wallet that will execute this ContractMethod. Must be for the same chainId as the contractMethod"
       ),
     name: z
       .string()
@@ -367,7 +367,7 @@ export const executeContractMethodSchema = z
       .optional()
       .nullable()
       .describe(
-        "The ID of the escrow wallet that will execute the contractMethod. If not provided, the default escrow wallet for the contractMethod will be used"
+        "The ID of the wallet that will execute the contractMethod. If not provided, the default wallet for the contractMethod will be used"
       ),
     memo: z
       .string()
@@ -404,7 +404,7 @@ export const executeContractMethodSchema = z
       ),
   })
   .describe(
-    "Parameters required to execute a contractMethod. Includes the function parameters, optional escrow wallet override, optional memo, optional value for payable methods, and optional contract address override"
+    "Parameters required to execute a contractMethod. Includes the function parameters, optional wallet override, optional memo, optional value for payable methods, and optional contract address override"
   );
 
 // Validation for executing a contractMethod as a delegator
@@ -422,7 +422,7 @@ export const executeAsDelegatorContractMethodSchema = z
       .optional()
       .nullable()
       .describe(
-        "The ID of the escrow wallet that will execute the contractMethod. If not provided, the default escrow wallet for the contractMethod will be used"
+        "The ID of the wallet that will execute the contractMethod. If not provided, the default wallet for the contractMethod will be used"
       ),
     memo: z
       .string()
@@ -559,7 +559,7 @@ export const executeBatchContractMethodSchema = z
     contractMethods: z
       .array(batchContractMethodSchema)
       .describe("Array of contract methods to execute in batch"),
-    walletId: z.string().uuid().describe("The ID of the escrow wallet that will execute the batch"),
+    walletId: z.string().uuid().describe("The ID of the wallet that will execute the batch"),
     atomic: z
       .boolean()
       .optional()
@@ -609,7 +609,7 @@ export const executeBatchAsDelegatorContractMethodSchema = z
     contractMethods: z
       .array(batchContractMethodAsDelegatorSchema)
       .describe("Array of contract methods to execute in batch as delegator"),
-    walletId: z.string().uuid().describe("The ID of the escrow wallet that will execute the batch"),
+    walletId: z.string().uuid().describe("The ID of the wallet that will execute the batch"),
     atomic: z
       .boolean()
       .optional()
@@ -788,7 +788,7 @@ export const createContractMethodSchema = z
     walletId: z
       .uuid()
       .describe(
-        "The ID of the escrow wallet that will execute the contractMethod. This escrow wallet must be for the same chainId as the contractMethod you are creating"
+        "The ID of the wallet that will execute the contractMethod. This wallet must be for the same chainId as the contractMethod you are creating"
       ),
     name: z
       .string()
@@ -845,7 +845,7 @@ export const importFromABISchema = z
     walletId: z
       .uuid()
       .describe(
-        "The ID of the escrow wallet that will execute the contractMethod. Must be for the same chainId as the contractMethod"
+        "The ID of the wallet that will execute the contractMethod. Must be for the same chainId as the contractMethod"
       ),
     abi: ethereumAbiSchema,
     name: z
@@ -1030,7 +1030,7 @@ export const contractContractMethodsSchema = z
     walletId: z
       .uuid()
       .describe(
-        "The ID of the escrow wallet that will execute the contractMethods. Must be for the same chainId as the contractMethods"
+        "The ID of the wallet that will execute the contractMethods. Must be for the same chainId as the contractMethods"
       ),
     promptId: z
       .uuid()

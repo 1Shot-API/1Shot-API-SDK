@@ -57,7 +57,7 @@ All examples below assume you have a `client` instance and a `businessId` (your 
 
 ## 1. Server Wallets
 
-1Shot API uses **server wallets** (escrow wallets) to sign and send transactions on your behalf. You create and manage them per business and chain.
+1Shot API uses **server wallets** to sign and send transactions on your behalf. You create and manage them per business and chain.
 
 ### 1.1 Create server wallet
 
@@ -100,7 +100,7 @@ const updated = await client.wallets.update("your_wallet_id", {
 
 ### 1.4 Get signatures from server wallets
 
-Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals).
+Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
 
 **EIP-3009**
 
@@ -135,7 +135,13 @@ const sig = await client.wallets.getSignature(
 
 **Authorize Permit2**
 
-The API supports authorizing a wallet for Permit2 for a given token so it can perform Permit2 transfers without a new signature every time. This is `PUT /wallets/{walletId}/authorizePermit2` in the [M2M spec](https://github.com/1Shot-API/1Shot-API-SDK/blob/main/m2mGatewaySpec.yaml). If the SDK does not yet expose this method, you can call the endpoint via `client.request("PUT", `/wallets/${walletId}/authorizePermit2`, { contractAddress: "0x..." })` or wait for a future SDK release.
+Authorize a wallet for Permit2 for a given token so it can perform Permit2 transfers without a new signature every time. **The wallet must have gas (native token) to run the authorize transaction.**
+
+```typescript
+const { success } = await client.wallets.authorizePermit2("your_wallet_id", {
+  contractAddress: "0x...", // token contract, e.g. USDC
+});
+```
 
 ### 1.5 Delegations
 
@@ -181,7 +187,7 @@ Same idea when you have the parent delegation as JSON instead of an ID (e.g. to 
 
 ```typescript
 const { parent, redelegation } = await client.wallets.redelegateWithDelegationData(
-  "escrow_wallet_id_that_is_current_delegate",
+  "wallet_id_that_is_current_delegate",
   {
     delegationData: "<parent delegation JSON string>",
     delegateAddress: "0xNewDelegate...",
@@ -358,7 +364,7 @@ const transaction = await client.contractMethods.executeAsDelegator(
   "your_contract_method_id",
   { recipient: "0x...", amount: "1000000" },
   {
-    walletId: "escrow_wallet_id",
+    walletId: "wallet_id",
     delegationData: ["<parent JSON>", "<redelegation JSON>"],
     memo: "Delegated transfer",
   }
@@ -395,7 +401,7 @@ Same as batch execute, but each item can specify delegator info so the batch run
 
 ```typescript
 const transaction = await client.contractMethods.executeBatchAsDelegator({
-  walletId: "escrow_wallet_id",
+  walletId: "wallet_id",
   contractMethods: [
     {
       contractMethodId: "method_uuid_1",
@@ -560,14 +566,14 @@ const { response, page, pageSize, totalResults } =
 
 ---
 
-## Webhook verification
+## Webhook validation
 
-1Shot API can send webhooks for transaction state changes. Verify signatures using the provided utility.
+1Shot API can send webhooks for transaction state changes. Verify signatures using the provided utility to make sure they are coming from 1Shot API.
 
 ### Using the standalone function
 
 ```typescript
-import { verifyWebhook } from "@1shotapi/client-sdk";
+import { validateWebhook } from "@1shotapi/client-sdk";
 import express from "express";
 
 const app = express();
@@ -575,19 +581,12 @@ app.use(express.json());
 
 app.post("/webhook", async (req, res) => {
   const body = req.body;
-  const signature = body.signature;
-  delete body.signature;
-
-  if (!signature) {
-    return res.status(400).json({ error: "Signature missing" });
-  }
 
   const publicKey = "your_webhook_public_key";
 
   try {
-    const isValid = verifyWebhook({
+    const isValid = await validateWebhook({
       body,
-      signature,
       publicKey,
     });
 
@@ -610,7 +609,7 @@ The client can throw:
 
 - **RequestError** – HTTP request failures
 - **ZodError** – Invalid parameters (from schema validation)
-- **InvalidSignatureError** – Invalid webhook signatures (from `verifyWebhook`)
+- **InvalidSignatureError** – Invalid webhook signatures (from `validateWebhook`)
 
 ---
 
