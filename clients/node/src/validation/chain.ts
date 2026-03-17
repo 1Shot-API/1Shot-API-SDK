@@ -5,18 +5,21 @@ export const gasFeesSchema = z
   .object({
     gasPrice: z
       .string()
+      .optional()
       .nullable()
       .describe(
         "Gas price in wei for non-EIP-1559 chains (e.g., Binance). Will be null for EIP-1559 chains"
       ),
     maxFeePerGas: z
       .string()
+      .optional()
       .nullable()
       .describe(
         "Maximum fee per gas in wei for EIP-1559 chains. Will be null for non-EIP-1559 chains"
       ),
     maxPriorityFeePerGas: z
       .string()
+      .optional()
       .nullable()
       .describe(
         "Maximum priority fee per gas in wei for EIP-1559 chains. Will be null for non-EIP-1559 chains"

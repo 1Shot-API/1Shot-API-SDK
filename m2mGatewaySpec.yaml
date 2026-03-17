@@ -2002,7 +2002,10 @@ paths:
       tags:
         - Wallets
         - Get
-      description: Gets a signature from a Wallet. 1Shot supports several different types of signatures, including ERC-3009 (transferWithAuthorization) and Permit2
+      description: |
+        Gets a signature from a Wallet (same behavior as **POST** on this path). Supported types:
+        - **erc3009** / **permit2**: Token transfer authorizations. Pass `contractAddress`, `destinationAddress`, and `amount` as query parameters (plus optional `validUntil`, `validAfter`, `fromAddress`), or use **POST** with the same fields in the JSON body.
+        - **erc712**: Generic EIP-712 / `eth_signTypedData_v4`. Pass `domain`, `types`, and `data` as query parameters (JSON strings), or use **POST** with `domain`, `types`, and `data` as JSON objects (recommended for large payloads; avoids URL length limits).
       parameters:
         - name: walletId
           in: path
@@ -2012,28 +2015,29 @@ paths:
             $ref: "#/components/schemas/WalletId"
         - name: type
           in: path
-          description: The type of signature to get. Currently, only erc3009 and permit2 are supported. The other parameters depend on the type of signature.
+          description: Signature kind. Use erc712 for arbitrary EIP-712 payloads; erc3009 and permit2 for token transfer flows.
           required: true
           schema:
             type: string
             enum:
               - erc3009
               - permit2
+              - erc712
         - name: contractAddress
           in: query
-          description: The contract address of the token that you are getting a signature for, such as USDC.
-          required: true
+          description: Required for erc3009 and permit2. Token contract address (e.g. USDC). Ignored for erc712.
+          required: false
           schema:
             $ref: "#/components/schemas/ContractAddress"
         - name: destinationAddress
           in: query
-          description: The address of the destination that the transfer will be sent to, such as a user's wallet address or another contract.
-          required: true
+          description: Required for erc3009 and permit2. Transfer destination. Ignored for erc712.
+          required: false
           schema:
             $ref: "#/components/schemas/AccountAddress"
         - name: amount
           in: query
-          description: The amount of the token to transfer. This is in Wei, and depends on the number of decimals of the token. Make sure you know the details of the token you are transferring!
+          description: Required for erc3009 and permit2. Amount in token smallest units (Wei-like). Ignored for erc712.
           required: false
           schema:
             type: string
@@ -2049,7 +2053,7 @@ paths:
             example: 1659485172
         - name: validAfter
           in: query
-          description: The timestamp after which the signature is valid. This is in seconds since the Unix epoch. This is inused for Permit2 signatures and will produce an error if it is provided.
+          description: The timestamp after which the signature is valid (seconds since Unix epoch). Only for erc3009; must not be set for permit2.
           required: false
           schema:
             type: number
@@ -2057,10 +2061,34 @@ paths:
             example: 1659485172
         - name: fromAddress
           in: query
-          description: Optional. When set, the ERC-3009 authorization is created with this address as the "from" (token holder) instead of the server wallet. The server wallet still signs on behalf of this address. Only applicable for erc3009 signature type; ignored for permit2.
+          description: Optional. When set, the ERC-3009 authorization uses this address as the "from" (token holder). Only for erc3009.
           required: false
           schema:
             $ref: "#/components/schemas/AccountAddress"
+        - name: domain
+          in: query
+          description: |
+            **erc712 only.** URL-encoded JSON string of the EIP-712 domain (e.g. `name`, `version`, `chainId`, `verifyingContract`), same as the first argument to `signTypedData`.
+          required: false
+          schema:
+            type: string
+            example: '{"name":"MyApp","version":"1","chainId":1,"verifyingContract":"0x0000000000000000000000000000000000000000"}'
+        - name: types
+          in: query
+          description: |
+            **erc712 only.** URL-encoded JSON string of the types map (struct definitions), same as the `types` argument to `signTypedData`. Do not include `EIP712Domain` if your library adds it automatically; the API strips it before signing.
+          required: false
+          schema:
+            type: string
+            example: '{"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}]}'
+        - name: data
+          in: query
+          description: |
+            **erc712 only.** URL-encoded JSON object with `primaryType` (string, must match a key in `types`) and `message` (object, field values for that primary type), equivalent to choosing the root struct and message passed to `signTypedData`.
+          required: false
+          schema:
+            type: string
+            example: '{"primaryType":"Person","message":{"name":"Alice","wallet":"0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"}}'
       security:
         - OAuth2ClientCredentials:
           - read:api
@@ -2080,7 +2108,121 @@ paths:
                   data:
                     type: string
                     format: json-string
-                    description: The actual data that was signed.
+                    description: For erc3009/permit2, the signed payload. For erc712, a JSON string of domain, types, primaryType, and message that was signed.
+        400:
+          $ref: "#/components/responses/BadRequestError"
+        403:
+          $ref: "#/components/responses/PermissionError"
+        404:
+          $ref: "#/components/responses/NotFoundError"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
+
+    post:
+      tags:
+        - Wallets
+        - Post
+      description: |
+        Same signature operations as **GET** `.../signature/{type}`, with parameters in the JSON body instead of the query string. Use this for **erc712** when `domain`, `types`, or `data` are large, or whenever you prefer a JSON body. Path parameters `walletId` and `type` are unchanged.
+
+        - **erc3009** / **permit2**: Body fields `contractAddress`, `destinationAddress`, `amount` (required); optional `validUntil`, `validAfter`, `fromAddress`.
+        - **erc712**: Body fields `domain` (object), `types` (object), `data` (object with `primaryType` and `message`). You may still send `domain`/`types`/`data` as JSON strings if you prefer.
+      parameters:
+        - name: walletId
+          in: path
+          description: The ID of the wallet
+          required: true
+          schema:
+            $ref: "#/components/schemas/WalletId"
+        - name: type
+          in: path
+          description: Same as GET — erc3009, permit2, or erc712.
+          required: true
+          schema:
+            type: string
+            enum:
+              - erc3009
+              - permit2
+              - erc712
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                Include the fields for the chosen `type`. Omit unrelated fields (e.g. do not send contractAddress for erc712).
+              properties:
+                contractAddress:
+                  $ref: "#/components/schemas/ContractAddress"
+                destinationAddress:
+                  $ref: "#/components/schemas/AccountAddress"
+                amount:
+                  oneOf:
+                    - type: string
+                      format: big-number-string
+                    - type: number
+                  description: Required for erc3009 and permit2. Number values are accepted and coerced to string.
+                validUntil:
+                  type: number
+                  format: unix-timestamp
+                validAfter:
+                  type: number
+                  format: unix-timestamp
+                fromAddress:
+                  $ref: "#/components/schemas/AccountAddress"
+                domain:
+                  description: erc712 — EIP-712 domain object (or JSON string).
+                  oneOf:
+                    - type: object
+                      additionalProperties: true
+                    - type: string
+                types:
+                  description: erc712 — types map (or JSON string).
+                  oneOf:
+                    - type: object
+                      additionalProperties: true
+                    - type: string
+                data:
+                  description: erc712 — object with primaryType and message (or JSON string of that object).
+                  oneOf:
+                    - type: object
+                      required:
+                        - primaryType
+                        - message
+                      properties:
+                        primaryType:
+                          type: string
+                        message:
+                          type: object
+                          additionalProperties: true
+                    - type: string
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: "The signature and the data that was signed."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  signature:
+                    type: string
+                    format: hex-string
+                    description: The signature.
+                    example: "0x1234567890abcdef"
+                  data:
+                    type: string
+                    format: json-string
+                    description: Signed payload / metadata (same as GET).
+        400:
+          $ref: "#/components/responses/BadRequestError"
         403:
           $ref: "#/components/responses/PermissionError"
         404:
@@ -3851,21 +3993,6 @@ components:
         - live
         - archived
         - both
-    
-    EWebhookStatus:
-      type: string
-      description: The current status of the webhook
-      enum:
-        - Unsent
-        - Success
-        - Retrying
-        - Failed
-
-    EEventName:
-      type: string
-      enum:
-        - TransactionFailure
-        - TransactionSuccess
         
     EChain:
       type: integer

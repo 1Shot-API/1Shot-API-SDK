@@ -20,6 +20,7 @@ import {
   deleteDelegationSchema,
   getSignatureSchema,
   signatureResponseSchema,
+  signTypedDataSchema,
   authorizePermit2Schema,
   authorizePermit2ResponseSchema,
   redelegateSchema,
@@ -31,6 +32,7 @@ const listWalletsSchemaOptions = listWalletsSchema.omit({ businessId: true });
 const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
 const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
+const signTypedDataSchemaOptions = signTypedDataSchema.omit({ walletId: true });
 const authorizePermit2SchemaOptions = authorizePermit2Schema.omit({ walletId: true });
 const redelegateSchemaOptions = redelegateSchema.omit({ delegationId: true });
 const redelegateWithDelegationDataSchemaOptions = redelegateWithDelegationDataSchema.omit({
@@ -364,6 +366,36 @@ export class Wallets {
     const response = await this.client.request<SignatureResponse>("GET", path);
 
     // Validate the response
+    return signatureResponseSchema.parse(response);
+  }
+
+  /**
+   * Sign arbitrary EIP-712 typed data (`eth_signTypedData_v4`) with the server wallet.
+   * Uses **POST** `/wallets/{walletId}/signature/erc712` so large `domain` / `types` / `message` payloads are not limited by URL length.
+   * @param walletId The ID of the wallet to sign with
+   * @param params EIP-712 `domain`, `types`, and `data` ({ primaryType, message })
+   * @returns Promise<SignatureResponse> signature hex and JSON string describing what was signed
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async signTypedData(
+    walletId: string,
+    params: z.infer<typeof signTypedDataSchemaOptions>
+  ): Promise<SignatureResponse> {
+    const validated = signTypedDataSchema.parse({
+      walletId,
+      ...params,
+    });
+
+    const response = await this.client.request<SignatureResponse>(
+      "POST",
+      `/wallets/${validated.walletId}/signature/erc712`,
+      {
+        domain: validated.domain,
+        types: validated.types,
+        data: validated.data,
+      }
+    );
+
     return signatureResponseSchema.parse(response);
   }
 
