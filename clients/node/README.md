@@ -100,7 +100,7 @@ const updated = await client.wallets.update("your_wallet_id", {
 
 ### 1.4 Get signatures from server wallets
 
-Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
+Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals), and **EIP-712** typed data signatures via `signTypedData` (same as `eth_signTypedData_v4`). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
 
 **EIP-3009**
 
@@ -131,6 +131,35 @@ const sig = await client.wallets.getSignature(
     validAfter: 0,
   }
 );
+```
+
+**EIP-712 (`signTypedData`)**
+
+Sign arbitrary EIP-712 typed data with the server wallet. The SDK uses **POST** so large `domain`, `types`, and `message` values are not limited by URL length. Omit `EIP712Domain` from `types` if your tooling adds it—the API strips it before signing.
+
+```typescript
+const sig = await client.wallets.signTypedData("your_wallet_id", {
+  domain: {
+    name: "MyApp",
+    version: "1",
+    chainId: 1,
+    verifyingContract: "0x0000000000000000000000000000000000000000",
+  },
+  types: {
+    Person: [
+      { name: "name", type: "string" },
+      { name: "wallet", type: "address" },
+    ],
+  },
+  data: {
+    primaryType: "Person",
+    message: {
+      name: "Alice",
+      wallet: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+    },
+  },
+});
+// sig.signature — hex signature; sig.data — JSON string describing what was signed
 ```
 
 **Authorize Permit2**

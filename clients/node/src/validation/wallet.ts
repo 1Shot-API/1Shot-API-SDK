@@ -321,6 +321,34 @@ export const getSignatureSchema = z
   })
   .describe("Parameters for getting a signature from a wallet");
 
+// EIP-712 typed data for POST /wallets/{walletId}/signature/erc712
+export const signTypedDataBodySchema = z
+  .object({
+    domain: z
+      .record(z.string(), z.unknown())
+      .describe(
+        "EIP-712 domain object (e.g. name, version, chainId, verifyingContract), same as the first argument to eth_signTypedData_v4"
+      ),
+    types: z
+      .record(z.string(), z.unknown())
+      .describe(
+        "Types map for signTypedData. Do not include EIP712Domain if your library adds it automatically; the API strips it before signing"
+      ),
+    data: z
+      .object({
+        primaryType: z.string().describe("Root struct name; must match a key in types"),
+        message: z.record(z.string(), z.unknown()).describe("Field values for the primary type"),
+      })
+      .describe("Equivalent to choosing the root struct and message passed to signTypedData"),
+  })
+  .describe(
+    "Body for EIP-712 / erc712 signature via POST (avoids URL length limits for large payloads)"
+  );
+
+export const signTypedDataSchema = signTypedDataBodySchema.extend({
+  walletId: z.uuid().describe("ID of the wallet that will sign"),
+});
+
 // Validation for signature response
 export const signatureResponseSchema = z
   .object({
