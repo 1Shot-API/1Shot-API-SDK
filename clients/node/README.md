@@ -100,7 +100,7 @@ const updated = await client.wallets.update("your_wallet_id", {
 
 ### 1.4 Get signatures from server wallets
 
-Server wallets can produce **EIP-3009** and **Permit2** signatures for use in transfer flows (e.g. gasless approvals), and **EIP-712** typed data signatures via `signTypedData` (same as `eth_signTypedData_v4`). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
+Server wallets can produce **EIP-3009** and **Permit2** signatures for transfer flows (e.g. gasless approvals), **EIP-712** typed data via `signTypedData` (`eth_signTypedData_v4`), and **EIP-191** plain-text messages via `signMessage` (`personal_sign`). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
 
 **EIP-3009**
 
@@ -135,7 +135,7 @@ const sig = await client.wallets.getSignature(
 
 **EIP-712 (`signTypedData`)**
 
-Sign arbitrary EIP-712 typed data with the server wallet. The SDK uses **POST** so large `domain`, `types`, and `message` values are not limited by URL length. Omit `EIP712Domain` from `types` if your tooling adds it—the API strips it before signing.
+Sign arbitrary EIP-712 typed data with the server wallet. The SDK uses **POST** so large payloads are not limited by URL length. The request body uses **`message`** as the typed-data root: `{ primaryType, message: { …struct fields } }`. Omit `EIP712Domain` from `types` if your tooling adds it—the API strips it before signing.
 
 ```typescript
 const sig = await client.wallets.signTypedData("your_wallet_id", {
@@ -151,7 +151,7 @@ const sig = await client.wallets.signTypedData("your_wallet_id", {
       { name: "wallet", type: "address" },
     ],
   },
-  data: {
+  message: {
     primaryType: "Person",
     message: {
       name: "Alice",
@@ -159,7 +159,18 @@ const sig = await client.wallets.signTypedData("your_wallet_id", {
     },
   },
 });
-// sig.signature — hex signature; sig.data — JSON string describing what was signed
+// sig.signature — hex; sig.data — JSON describing what was signed
+```
+
+**EIP-191 (`signMessage`)**
+
+Sign a plain UTF-8 string (EIP-191 personal message). **POST** is used so long text is not limited by URL length.
+
+```typescript
+const sig = await client.wallets.signMessage("your_wallet_id", {
+  message: "Login to MyApp as user@example.com",
+});
+// sig.signature — hex; sig.data — the message that was signed
 ```
 
 **Authorize Permit2**

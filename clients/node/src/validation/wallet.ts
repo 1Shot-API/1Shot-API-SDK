@@ -334,18 +334,33 @@ export const signTypedDataBodySchema = z
       .describe(
         "Types map for signTypedData. Do not include EIP712Domain if your library adds it automatically; the API strips it before signing"
       ),
-    data: z
+    message: z
       .object({
         primaryType: z.string().describe("Root struct name; must match a key in types"),
-        message: z.record(z.string(), z.unknown()).describe("Field values for the primary type"),
+        message: z.record(z.string(), z.unknown()).describe("Struct field values for primaryType"),
       })
-      .describe("Equivalent to choosing the root struct and message passed to signTypedData"),
+      .describe(
+        "Typed-data root passed to signTypedData: primaryType plus struct message (API body field name is message)"
+      ),
   })
   .describe(
     "Body for EIP-712 / erc712 signature via POST (avoids URL length limits for large payloads)"
   );
 
 export const signTypedDataSchema = signTypedDataBodySchema.extend({
+  walletId: z.uuid().describe("ID of the wallet that will sign"),
+});
+
+// EIP-191 personal message for POST /wallets/{walletId}/signature/erc191
+export const signMessageBodySchema = z
+  .object({
+    message: z
+      .string()
+      .describe("Plain UTF-8 text to sign (EIP-191 / personal_sign). Use POST for long messages."),
+  })
+  .describe("Body for EIP-191 message signature via POST");
+
+export const signMessageSchema = signMessageBodySchema.extend({
   walletId: z.uuid().describe("ID of the wallet that will sign"),
 });
 

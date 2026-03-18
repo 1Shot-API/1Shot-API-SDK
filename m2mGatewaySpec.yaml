@@ -2005,7 +2005,8 @@ paths:
       description: |
         Gets a signature from a Wallet (same behavior as **POST** on this path). Supported types:
         - **erc3009** / **permit2**: Token transfer authorizations. Pass `contractAddress`, `destinationAddress`, and `amount` as query parameters (plus optional `validUntil`, `validAfter`, `fromAddress`), or use **POST** with the same fields in the JSON body.
-        - **erc712**: Generic EIP-712 / `eth_signTypedData_v4`. Pass `domain`, `types`, and `data` as query parameters (JSON strings), or use **POST** with `domain`, `types`, and `data` as JSON objects (recommended for large payloads; avoids URL length limits).
+        - **erc712**: EIP-712 / `eth_signTypedData_v4`. Pass `domain`, `types`, and `message` (typed-data envelope: `primaryType` + struct `message`) as query JSON strings, or **POST** with objects (recommended for large payloads).
+        - **erc191**: EIP-191 personal message via `signMessage`. Pass **`message`** as the plain UTF-8 string to sign (query or **POST** body). Use **POST** for long messages.
       parameters:
         - name: walletId
           in: path
@@ -2015,7 +2016,7 @@ paths:
             $ref: "#/components/schemas/WalletId"
         - name: type
           in: path
-          description: Signature kind. Use erc712 for arbitrary EIP-712 payloads; erc3009 and permit2 for token transfer flows.
+          description: erc3009 / permit2 (token auth), erc712 (typed data), erc191 (plain message, EIP-191).
           required: true
           schema:
             type: string
@@ -2023,21 +2024,22 @@ paths:
               - erc3009
               - permit2
               - erc712
+              - erc191
         - name: contractAddress
           in: query
-          description: Required for erc3009 and permit2. Token contract address (e.g. USDC). Ignored for erc712.
+          description: Required for erc3009 and permit2. Ignored for erc712 and erc191.
           required: false
           schema:
             $ref: "#/components/schemas/ContractAddress"
         - name: destinationAddress
           in: query
-          description: Required for erc3009 and permit2. Transfer destination. Ignored for erc712.
+          description: Required for erc3009 and permit2. Ignored for erc712 and erc191.
           required: false
           schema:
             $ref: "#/components/schemas/AccountAddress"
         - name: amount
           in: query
-          description: Required for erc3009 and permit2. Amount in token smallest units (Wei-like). Ignored for erc712.
+          description: Required for erc3009 and permit2. Ignored for erc712 and erc191.
           required: false
           schema:
             type: string
@@ -2081,10 +2083,11 @@ paths:
           schema:
             type: string
             example: '{"Person":[{"name":"name","type":"string"},{"name":"wallet","type":"address"}]}'
-        - name: data
+        - name: message
           in: query
           description: |
-            **erc712 only.** URL-encoded JSON object with `primaryType` (string, must match a key in `types`) and `message` (object, field values for that primary type), equivalent to choosing the root struct and message passed to `signTypedData`.
+            **erc712:** URL-encoded JSON string `{ "primaryType": "...", "message": { ...struct fields } }` (same shape as the typed-data root passed to `signTypedData`).
+            **erc191:** Plain UTF-8 text to sign (EIP-191). For long text prefer **POST**.
           required: false
           schema:
             type: string
@@ -2108,7 +2111,7 @@ paths:
                   data:
                     type: string
                     format: json-string
-                    description: For erc3009/permit2, the signed payload. For erc712, a JSON string of domain, types, primaryType, and message that was signed.
+                    description: For erc3009/permit2, the signed payload. For erc712, domain/types/primaryType/struct. For erc191, the message that was signed.
         400:
           $ref: "#/components/responses/BadRequestError"
         403:
@@ -2127,10 +2130,11 @@ paths:
         - Wallets
         - Post
       description: |
-        Same signature operations as **GET** `.../signature/{type}`, with parameters in the JSON body instead of the query string. Use this for **erc712** when `domain`, `types`, or `data` are large, or whenever you prefer a JSON body. Path parameters `walletId` and `type` are unchanged.
+        Same as **GET**, with parameters in the JSON body. Prefer **POST** for large **erc712** payloads or long **erc191** messages.
 
-        - **erc3009** / **permit2**: Body fields `contractAddress`, `destinationAddress`, `amount` (required); optional `validUntil`, `validAfter`, `fromAddress`.
-        - **erc712**: Body fields `domain` (object), `types` (object), `data` (object with `primaryType` and `message`). You may still send `domain`/`types`/`data` as JSON strings if you prefer.
+        - **erc3009** / **permit2**: `contractAddress`, `destinationAddress`, `amount` (required); optional `validUntil`, `validAfter`, `fromAddress`.
+        - **erc712**: `domain`, `types`, `message` (`{ primaryType, message: { ...struct } }`). Objects or JSON strings.
+        - **erc191**: `message` as a plain string (UTF-8).
       parameters:
         - name: walletId
           in: path
@@ -2140,7 +2144,7 @@ paths:
             $ref: "#/components/schemas/WalletId"
         - name: type
           in: path
-          description: Same as GET — erc3009, permit2, or erc712.
+          description: Same as GET — erc3009, permit2, erc712, erc191.
           required: true
           schema:
             type: string
@@ -2148,6 +2152,7 @@ paths:
               - erc3009
               - permit2
               - erc712
+              - erc191
       requestBody:
         required: true
         content:
@@ -2155,7 +2160,7 @@ paths:
             schema:
               type: object
               description: |
-                Include the fields for the chosen `type`. Omit unrelated fields (e.g. do not send contractAddress for erc712).
+                Include the fields for the chosen `type`. Omit unrelated fields (e.g. no `contractAddress` for erc712/erc191).
               properties:
                 contractAddress:
                   $ref: "#/components/schemas/ContractAddress"
@@ -2187,9 +2192,12 @@ paths:
                     - type: object
                       additionalProperties: true
                     - type: string
-                data:
-                  description: erc712 — object with primaryType and message (or JSON string of that object).
+                message:
+                  description: |
+                    **erc712:** object `{ primaryType, message }` (struct payload) or JSON string of that object.
+                    **erc191:** plain string to sign (EIP-191).
                   oneOf:
+                    - type: string
                     - type: object
                       required:
                         - primaryType
@@ -2200,7 +2208,6 @@ paths:
                         message:
                           type: object
                           additionalProperties: true
-                    - type: string
       security:
         - OAuth2ClientCredentials:
           - read:api
