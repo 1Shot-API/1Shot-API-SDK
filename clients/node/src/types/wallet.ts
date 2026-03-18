@@ -20,6 +20,8 @@ import {
   signatureResponseSchema,
   signTypedDataSchema,
   signTypedDataBodySchema,
+  signMessageSchema,
+  signMessageBodySchema,
   redelegateSchema,
   redelegateResponseSchema,
   redelegateWithDelegationDataSchema,
@@ -59,6 +61,8 @@ export type GetSignature = z.infer<typeof getSignatureSchema>;
 export type SignatureResponse = z.infer<typeof signatureResponseSchema>;
 export type SignTypedDataBody = z.infer<typeof signTypedDataBodySchema>;
 export type SignTypedData = z.infer<typeof signTypedDataSchema>;
+export type SignMessageBody = z.infer<typeof signMessageBodySchema>;
+export type SignMessage = z.infer<typeof signMessageSchema>;
 export type Redelegate = z.infer<typeof redelegateSchema>;
 export type RedelegateResponse = z.infer<typeof redelegateResponseSchema>;
 export type RedelegateWithDelegationData = z.infer<typeof redelegateWithDelegationDataSchema>;

@@ -21,6 +21,7 @@ import {
   getSignatureSchema,
   signatureResponseSchema,
   signTypedDataSchema,
+  signMessageSchema,
   authorizePermit2Schema,
   authorizePermit2ResponseSchema,
   redelegateSchema,
@@ -33,6 +34,7 @@ const getWalletSchemaOptions = getWalletSchema.omit({ walletId: true });
 const listDelegationsSchemaOptions = listDelegationsSchema.omit({ walletId: true });
 const getSignatureSchemaOptions = getSignatureSchema.omit({ walletId: true, type: true });
 const signTypedDataSchemaOptions = signTypedDataSchema.omit({ walletId: true });
+const signMessageSchemaOptions = signMessageSchema.omit({ walletId: true });
 const authorizePermit2SchemaOptions = authorizePermit2Schema.omit({ walletId: true });
 const redelegateSchemaOptions = redelegateSchema.omit({ delegationId: true });
 const redelegateWithDelegationDataSchemaOptions = redelegateWithDelegationDataSchema.omit({
@@ -373,7 +375,7 @@ export class Wallets {
    * Sign arbitrary EIP-712 typed data (`eth_signTypedData_v4`) with the server wallet.
    * Uses **POST** `/wallets/{walletId}/signature/erc712` so large `domain` / `types` / `message` payloads are not limited by URL length.
    * @param walletId The ID of the wallet to sign with
-   * @param params EIP-712 `domain`, `types`, and `data` ({ primaryType, message })
+   * @param params EIP-712 `domain`, `types`, and `message` ({ primaryType, message: struct fields })
    * @returns Promise<SignatureResponse> signature hex and JSON string describing what was signed
    * @throws {ZodError} If the parameters are invalid
    */
@@ -392,8 +394,33 @@ export class Wallets {
       {
         domain: validated.domain,
         types: validated.types,
-        data: validated.data,
+        message: validated.message,
       }
+    );
+
+    return signatureResponseSchema.parse(response);
+  }
+
+  /**
+   * Sign a plain UTF-8 message with the server wallet (EIP-191 / `personal_sign`).
+   * Uses **POST** `/wallets/{walletId}/signature/erc191` so long messages are not limited by URL length.
+   * @param walletId The ID of the wallet to sign with
+   * @param params Plain `message` string to sign
+   * @returns Promise<SignatureResponse> signature hex; `data` is the message that was signed
+   */
+  async signMessage(
+    walletId: string,
+    params: z.infer<typeof signMessageSchemaOptions>
+  ): Promise<SignatureResponse> {
+    const validated = signMessageSchema.parse({
+      walletId,
+      ...params,
+    });
+
+    const response = await this.client.request<SignatureResponse>(
+      "POST",
+      `/wallets/${validated.walletId}/signature/erc191`,
+      { message: validated.message }
     );
 
     return signatureResponseSchema.parse(response);
