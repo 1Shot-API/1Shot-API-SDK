@@ -328,7 +328,7 @@ export class ContractMethods {
    * Estimate the cost of executing a contractMethod
    * @param contractMethodId The ID of the contractMethod to estimate
    * @param params Configuration parameters for the contractMethod
-   * @param options Optional estimation options
+   * @param options Optional estimation options (`authorizationList`, `value`, `contractAddress` override)
    * @returns Promise<ContractMethodEstimate>
    * @throws {ZodError} If the parameters are invalid
    */
@@ -338,6 +338,7 @@ export class ContractMethods {
     options?: {
       authorizationList?: ERC7702Authorization[];
       value?: string;
+      contractAddress?: string;
     }
   ): Promise<ContractMethodEstimate> {
     const validatedParams = estimateContractMethodSchema.parse({
@@ -353,6 +354,7 @@ export class ContractMethods {
         params: validatedParams.params,
         authorizationList: validatedParams.authorizationList,
         value: validatedParams.value,
+        contractAddress: validatedParams.contractAddress,
       }
     );
 
