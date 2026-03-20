@@ -1,4 +1,4 @@
-import { ChainInfo, ListChains, GasFees } from "../types/chain.js";
+import { ChainInfo, ListChains, GasFees, ContractCodeInfo } from "../types/chain.js";
 import { IOneShotClient } from "../types/client.js";
 import { PagedResponse } from "../types/common.js";
 import {
@@ -6,6 +6,8 @@ import {
   listChainsSchema,
   gasFeesSchema,
   getFeesSchema,
+  contractCodeInfoSchema,
+  getCodeSchema,
 } from "../validation/chain.js";
 
 export class Chains {
@@ -57,5 +59,28 @@ export class Chains {
 
     // Validate the response
     return gasFeesSchema.parse(response);
+  }
+
+  /**
+   * Inspect bytecode at an address on a chain (`eth_getCode`). When bytecode matches the EIP-7702
+   * delegation designator (`0xef0100` + 20-byte implementation), returns the delegated implementation address.
+   * Counts against the same monthly read quota as reading a contract method.
+   * @param chainId Chain ID
+   * @param address Contract or account address (checksummed or lower-case hex)
+   * @returns Promise<ContractCodeInfo>
+   * @throws {ZodError} If the parameters are invalid
+   */
+  async getCode(chainId: number, address: string): Promise<ContractCodeInfo> {
+    const validated = getCodeSchema.parse({
+      chainId,
+      contractAddress: address,
+    });
+
+    const response = await this.client.request<ContractCodeInfo>(
+      "GET",
+      `/chains/${validated.chainId}/contracts/${validated.contractAddress}`
+    );
+
+    return contractCodeInfoSchema.parse(response);
   }
 }

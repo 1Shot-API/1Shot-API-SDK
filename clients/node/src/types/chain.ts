@@ -7,6 +7,8 @@ import {
   nativeCurrencyInformationSchema,
   gasFeesSchema,
   getFeesSchema,
+  contractCodeInfoSchema,
+  getCodeSchema,
 } from "../validation/chain.js";
 
 /**
@@ -38,3 +40,13 @@ export type ListChains = z.infer<typeof listChainsSchema>;
  * Parameters for getting gas fees for a specific chain.
  */
 export type GetFees = z.infer<typeof getFeesSchema>;
+
+/**
+ * Result of inspecting bytecode at an address (eth_getCode and EIP-7702 delegation info).
+ */
+export type ContractCodeInfo = z.infer<typeof contractCodeInfoSchema>;
+
+/**
+ * Parameters for inspecting bytecode at an address on a chain.
+ */
+export type GetCode = z.infer<typeof getCodeSchema>;
