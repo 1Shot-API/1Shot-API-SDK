@@ -15,13 +15,14 @@ This README is structured as a **second source of documentation** for how 1Shot 
 3. [Server Wallets](#1-server-wallets)
 4. [Smart Contracts](#2-smart-contracts)
 5. [Executing Transactions](#3-executing-transactions)
-6. [Webhooks](#4-webhooks)
-7. [Webhook verification](#webhook-verification)
-8. [Error handling](#error-handling)
-9. [Type safety](#type-safety)
-10. [Publishing](#publishing)
-11. [Contributing](#contributing)
-12. [License](#license)
+6. [Chains](#4-chains)
+7. [Webhooks](#5-webhooks)
+8. [Webhook verification](#webhook-verification)
+9. [Error handling](#error-handling)
+10. [Type safety](#type-safety)
+11. [Publishing](#publishing)
+12. [Contributing](#contributing)
+13. [License](#license)
 
 ---
 
@@ -457,11 +458,52 @@ const transaction = await client.contractMethods.executeBatchAsDelegator({
 
 ---
 
-## 4. Webhooks
+## 4. Chains
+
+`client.chains` covers everything in the **Chains** category of the M2M API: listing networks 1Shot supports, current gas fee estimates, and inspecting bytecode at an address (including EIP-7702 delegation).
+
+### 4.1 List chains (`list`)
+
+Returns a paginated list of supported chains. Each item includes `name`, `chainId`, `averageBlockMiningTime`, `nativeCurrency` (`name`, `symbol`, `decimals`), and `type` (`Mainnet`, `Testnet`, or `Hardhat`).
+
+```typescript
+const { response, page, pageSize, totalResults } = await client.chains.list({
+  page: 1,
+  pageSize: 25,
+});
+// response[].chainId, response[].name, response[].nativeCurrency.symbol, ...
+```
+
+### 4.2 Gas fees (`getFees`)
+
+Returns current gas pricing for a chain. For **EIP-1559** chains you typically get `maxFeePerGas` and `maxPriorityFeePerGas` (wei strings); for **legacy** style chains you may get `gasPrice` instead.
+
+```typescript
+const fees = await client.chains.getFees(8453);
+// fees.gasPrice — legacy chains, or null on EIP-1559
+// fees.maxFeePerGas, fees.maxPriorityFeePerGas — EIP-1559, or null on legacy
+```
+
+### 4.3 Contract bytecode (`getCode`)
+
+Returns whether the address has contract bytecode on the chain (`eth_getCode`) and, when the bytecode matches the EIP-7702 delegation designator (`0xef0100` + 20-byte implementation address), the **delegated implementation** contract address. This counts against the same monthly read quota as reading a contract method.
+
+```typescript
+const codeInfo = await client.chains.getCode(
+  8453, // Base mainnet
+  "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"
+);
+// codeInfo.isContract — true if non-empty bytecode
+// codeInfo.eip7702ImplementationAddress — implementation contract when EIP-7702 delegation bytecode; otherwise null
+```
+
+---
+
+## 5. Webhooks
 
 1Shot API lets you manage **webhook endpoints** (URLs that receive payloads) and **webhook triggers** (rules that decide when to send those payloads). You can list event names, create and update endpoints and triggers, rotate endpoint keys, and inspect generated webhooks and delivery attempts.
 
-### 4.1 Get available webhook event names
+### 5.1 Get available webhook event names
 
 List event names that may trigger webhooks (e.g. `TransactionExecutionSuccess`, `TransactionExecutionFailure`).
 
@@ -470,7 +512,7 @@ const { events } = await client.webhooks.getEvents();
 // events: ("TransactionExecutionFailure" | "TransactionExecutionSuccess" | ...)[]
 ```
 
-### 4.2 Webhook triggers
+### 5.2 Webhook triggers
 
 **List webhook triggers**
 
@@ -515,7 +557,7 @@ const updated = await client.webhooks.updateTrigger("your_webhook_trigger_id", {
 const { success } = await client.webhooks.deleteTrigger("your_webhook_trigger_id");
 ```
 
-### 4.3 Webhook endpoints
+### 5.3 Webhook endpoints
 
 **List webhook endpoints**
 
@@ -576,7 +618,7 @@ const endpoint = await client.webhooks.rotateEndpointKey("your_webhook_endpoint_
 // endpoint.publicKey is the new key; update your verification config
 ```
 
-### 4.4 Webhook deliveries and attempts
+### 5.4 Webhook deliveries and attempts
 
 **List webhooks for an endpoint**
 

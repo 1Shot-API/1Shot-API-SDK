@@ -87,3 +87,26 @@ export const getFeesSchema = z
     chainId: z.number().int().positive().describe("The ChainId of a supported chain on 1Shot API"),
   })
   .describe("Parameters for getting gas fees for a specific chain");
+
+// Result of GET /chains/{chainId}/contracts/{contractAddress} (eth_getCode + EIP-7702 delegation)
+export const contractCodeInfoSchema = z
+  .object({
+    isContract: z
+      .boolean()
+      .describe("True if eth_getCode returned non-empty bytecode at this address"),
+    eip7702ImplementationAddress: z
+      .string()
+      .nullable()
+      .describe(
+        "When bytecode is exactly the EIP-7702 delegation designator plus a 20-byte implementation address, that implementation contract; otherwise null"
+      ),
+  })
+  .describe("Bytecode summary at an address, including EIP-7702 delegation when applicable");
+
+// Validation for getCode parameters
+export const getCodeSchema = z
+  .object({
+    chainId: z.number().int().positive().describe("Chain ID to query"),
+    contractAddress: z.string().describe("Contract or account address to inspect"),
+  })
+  .describe("Parameters for inspecting bytecode at an address on a chain");

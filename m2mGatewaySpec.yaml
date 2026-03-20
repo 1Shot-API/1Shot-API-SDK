@@ -146,6 +146,41 @@ paths:
           $ref: "#/components/responses/DatabaseError"
         503:
           $ref: "#/components/responses/DatabaseError"
+
+  /chains/{chainId}/contracts/{contractAddress}:
+    get:
+      tags:
+        - Chains
+        - Get
+      description: |
+        Returns whether the address has contract bytecode on the given chain (`eth_getCode`) and, when the bytecode matches the EIP-7702 delegation designator (`0xef0100` + 20-byte implementation), the delegated implementation contract address. Counts against the same monthly read quota as reading a Contract Method.
+      parameters:
+        - name: chainId
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/EChain"
+        - name: contractAddress
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/ContractAddress"
+      security:
+        - OAuth2ClientCredentials:
+          - read:api
+      responses:
+        200:
+          description: Bytecode summary at the address.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractCodeInfo"
+        422:
+          $ref: "#/components/responses/UnprocessableEntityError"
+        500:
+          $ref: "#/components/responses/DatabaseError"
+        503:
+          $ref: "#/components/responses/DatabaseError"
   
   /methods/{contractMethodId}/test:  
     post:
@@ -2635,13 +2670,15 @@ paths:
     get:
       tags:
         - x402
-      description: Returns the supported payment methods
+      description: |
+        Returns supported x402 payment kinds. For each chain/scheme supported by the facilitator, the API returns **two** entries:
+        one with `x402Version: 1` and legacy `network` names, and one with `x402Version: 2` and CAIP-2 `eip155:&lt;chainId&gt;` network ids.
       security:
         - OAuth2ClientCredentials:
           - read:api
       responses:
         200:
-          description: Returns whether or not the payment should succeed
+          description: Supported x402 payment kinds (v1 and v2 rows per chain)
           content:
             application/json:
               schema:
@@ -2652,11 +2689,18 @@ paths:
                     items:
                       type: object
                       properties:
+                        x402Version:
+                          type: integer
+                          enum: [1, 2]
+                          description: Protocol version this row describes (`1` = legacy network name, `2` = CAIP-2 network).
                         scheme:
                           type: string
-                          description: The scheme for the payment
+                          description: The scheme for the payment (e.g. `exact`)
                         network:
-                          $ref: "#/components/schemas/EX402Network"
+                          description: v1 rows use legacy x402 network names; v2 rows use CAIP-2 `eip155:&lt;chainId&gt;`.
+                          oneOf:
+                            - $ref: "#/components/schemas/EX402Network"
+                            - $ref: "#/components/schemas/CAIP2Network"
                         tokens:
                           type: array
                           items:
@@ -2672,10 +2716,13 @@ paths:
                               decimals:
                                 type: integer
                               version:
-                                type: integer
+                                type: string
+                                description: Token metadata version (e.g. USDC `2`)
                       required:
+                        - x402Version
                         - scheme
                         - network
+                        - tokens
         403:
           $ref: "#/components/responses/PermissionError"
         500:
@@ -2687,7 +2734,12 @@ paths:
     post:
       tags:
         - x402
-      description: Verifies an x402 payment header
+      description: |
+        Verifies an x402 payment (facilitator flow). Supports **v1** and **v2**
+        ([x402 v1 spec](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v1.md),
+        [x402 v2 spec](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md)).
+        **v1:** `paymentPayload` is the v1 PaymentPayload; `paymentRequirements` uses `maxAmountRequired` and legacy `network` names.
+        **v2:** `paymentPayload` is the v2 shape (`accepted`, inner `payload`, optional `resource`); `paymentRequirements` uses `amount` and CAIP-2 `network` (e.g. `eip155:84532`). `paymentPayload.accepted` must match `paymentRequirements`.
       requestBody:
         required: true
         content:
@@ -2697,23 +2749,32 @@ paths:
               properties:
                 x402Version:
                   type: integer
-                  description: The x402 protocol version. Right now, it's just 1.
+                  description: Protocol version — use `1` or `2`.
                   example: 1
                 paymentPayload:
-                  type: string
-                  description: A JSON stringified PaymentPayload object
+                  type: object
+                  description: x402 v1 or v2 PaymentPayload (see endpoint description).
                 paymentRequirements:
                   type: object
+                  description: |
+                    v1 facilitator requirements (`maxAmountRequired`, legacy `network`) or
+                    v2 requirements (`amount`, CAIP-2 `network`). Other fields match the spec.
                   properties:
                     scheme:
                       type: string
                       example: exact
                     network:
-                      $ref: "#/components/schemas/EX402Network"
+                      oneOf:
+                        - $ref: "#/components/schemas/EX402Network"
+                        - $ref: "#/components/schemas/CAIP2Network"
                     maxAmountRequired:
                       type: string
                       format: big-number-string
                       example: 5000000
+                    amount:
+                      type: string
+                      format: big-number-string
+                      description: v2 required payment amount (atomic units)
                     resource:
                       type: string
                       example: https://n8n.1shotapi.dev/webhook/gas-station
@@ -2766,6 +2827,11 @@ paths:
                   invalidReason: 
                     type: string
                     description: The reason, if any, that the payment is invalid. Will be empty if isValid is true.
+                  payer:
+                    type: string
+                    format: evm-address
+                    nullable: true
+                    description: Payer address when determinable (v2-style); may be null when validation fails early.
         400:
           $ref: "#/components/responses/BadRequestError"
         403:
@@ -2781,7 +2847,12 @@ paths:
     post:
       tags:
         - x402
-      description: Runs a transaction from an x402 header and returns whether or not the payment was successful. 
+      description: |
+        Settles an x402 payment on-chain. Request body matches `POST /x402/verify` (**v1** vs **v2** `paymentPayload` / `paymentRequirements`).
+
+        **Response shape depends on `x402Version` in the request:**
+        - **`x402Version: 1`** — [x402 v1](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v1.md) settle shape: `error`, `txHash`, `networkId` (legacy network enum).
+        - **`x402Version: 2`** — [x402 v2](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md) settle shape: `errorReason`, `transaction`, `network` (CAIP-2), `payer`.
       requestBody:
         required: true
         content:
@@ -2791,23 +2862,29 @@ paths:
               properties:
                 x402Version:
                   type: integer
-                  description: The x402 protocol version. Right now, it's just 1.
+                  description: Protocol version — use `1` or `2`.
                   example: 1
                 paymentPayload:
-                  type: string
-                  description: A JSON stringified PaymentPayload object
+                  type: object
+                  description: x402 v1 or v2 PaymentPayload (see `POST /x402/verify`).
                 paymentRequirements:
                   type: object
+                  description: v1 or v2 payment requirements (same as `POST /x402/verify`).
                   properties:
                     scheme:
                       type: string
                       example: exact
                     network:
-                      $ref: "#/components/schemas/EX402Network"
+                      oneOf:
+                        - $ref: "#/components/schemas/EX402Network"
+                        - $ref: "#/components/schemas/CAIP2Network"
                     maxAmountRequired:
                       type: string
                       format: big-number-string
                       example: 5000000
+                    amount:
+                      type: string
+                      format: big-number-string
                     resource:
                       type: string
                       example: https://n8n.1shotapi.dev/webhook/gas-station
@@ -2848,23 +2925,19 @@ paths:
           - read:api
       responses:
         200:
-          description: Returns whether or not the payment should succeed
+          description: |
+            Settlement result. **`x402Version` in the body** matches the request and selects the schema (`1` = v1 fields, `2` = v2 fields).
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  error:
-                    type: string
-                  txHash:
-                    type: string
-                  networkId:
-                    $ref: "#/components/schemas/EX402Network"
-                required:
-                  - success
-                  - networkId
+                oneOf:
+                  - $ref: "#/components/schemas/X402SettleResponseV1"
+                  - $ref: "#/components/schemas/X402SettleResponseV2"
+                discriminator:
+                  propertyName: x402Version
+                  mapping:
+                    "1": "#/components/schemas/X402SettleResponseV1"
+                    "2": "#/components/schemas/X402SettleResponseV2"
         400:
           $ref: "#/components/responses/BadRequestError"
         403:
@@ -3966,6 +4039,70 @@ components:
         - mainnet
         - sepolia
 
+    CAIP2Network:
+      type: string
+      description: CAIP-2 chain identifier (e.g. EIP-155 `eip155:8453` for Base)
+      example: eip155:84532
+
+    X402SettleResponseV1:
+      type: object
+      description: |
+        Returned when the request body `x402Version` is `1`. Aligns with [x402 v1 SettlementResponse](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v1.md).
+      properties:
+        x402Version:
+          type: integer
+          enum: [1]
+          description: Always `1`; discriminates this response from v2.
+        success:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+          description: Error message when settlement failed
+        txHash:
+          type: string
+          nullable: true
+          description: Transaction hash when broadcast; null when not available
+        networkId:
+          $ref: "#/components/schemas/EX402Network"
+          nullable: true
+          description: Legacy x402 network name for the chain
+      required:
+        - x402Version
+        - success
+
+    X402SettleResponseV2:
+      type: object
+      description: |
+        Returned when the request body `x402Version` is `2`. Aligns with [x402 v2 SettleResponse](https://github.com/coinbase/x402/blob/main/specs/x402-specification-v2.md).
+      properties:
+        x402Version:
+          type: integer
+          enum: [2]
+          description: Always `2`; discriminates this response from v1.
+        success:
+          type: boolean
+        errorReason:
+          type: string
+          nullable: true
+          description: Error reason when `success` is false
+        transaction:
+          type: string
+          nullable: true
+          description: Transaction hash (empty string when settlement failed in some clients; here may be null)
+        network:
+          $ref: "#/components/schemas/CAIP2Network"
+          nullable: true
+          description: Chain as CAIP-2 `eip155:&lt;chainId&gt;`
+        payer:
+          type: string
+          format: evm-address
+          nullable: true
+          description: Payer address from the payment authorization
+      required:
+        - x402Version
+        - success
+
     ETransactionStatus:
       type: string
       enum:
@@ -4982,6 +5119,21 @@ components:
           description: Maximum priority fee per gas in wei for EIP-1559 chains. Will be null for non-EIP-1559 chains.
           example: "2000000000"
           nullable: true
+
+    ContractCodeInfo:
+      description: Result of inspecting bytecode at an address, including EIP-7702 delegation when applicable.
+      type: object
+      required:
+        - isContract
+        - eip7702ImplementationAddress
+      properties:
+        isContract:
+          type: boolean
+          description: True if `eth_getCode` returned non-empty bytecode at this address.
+        eip7702ImplementationAddress:
+          $ref: "#/components/schemas/ContractAddress"
+          nullable: true
+          description: When bytecode is exactly the EIP-7702 delegation designator plus a 20-byte implementation address, that implementation contract; otherwise null.
 
     LogDescription:
       description: A description of a log event
