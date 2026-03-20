@@ -722,6 +722,13 @@ export const estimateContractMethodSchema = z
       .describe(
         "The amount of native token to send along with the contractMethod. This is only applicable for contractMethods that are payable. Including this value for a nonpayable method will result in an error"
       ),
+    contractAddress: z
+      .string()
+      .optional()
+      .nullable()
+      .describe(
+        "The address of the smart contract. Can be overridden for this specific estimate (e.g. proxy or implementation address)"
+      ),
   })
   .describe(
     "Parameters for estimating a contractMethod - returns data about fees and gas amount. Used to calculate contractMethod costs before execution"

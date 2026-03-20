@@ -311,6 +311,8 @@ paths:
               properties:
                 params:
                   $ref: '#/components/schemas/JSONValue'
+                contractAddress:
+                  $ref: "#/components/schemas/ContractAddress"
                 authorizationList:
                   type: array
                   items:
