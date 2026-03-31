@@ -123,13 +123,22 @@ paths:
       tags:
         - Chains
         - Get
-      description: Gets the current gas fees for the specified chain. Returns either gasPrice for non-EIP-1559 chains (like Binance) or maxFeePerGas and maxPriorityFeePerGas for EIP-1559 enabled chains.
+      description: Gets current gas fees and fee history for the specified chain. Returns either gasPrice for non-EIP-1559 chains (like Binance) or maxFeePerGas/maxPriorityFeePerGas plus nextBaseFeePerGas/history for EIP-1559 enabled chains.
       parameters:
         - name: chainId
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/EChain"
+        - name: numberOfBlocks
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1024
+            default: 5
+          description: Number of latest blocks to request from `eth_feeHistory`.
       security:
         - OAuth2ClientCredentials:
           - read:api
@@ -5099,10 +5108,27 @@ components:
           type: number
           description: The number of decimals of the currency
 
+    GasFeePricingModel:
+      type: string
+      description: How the chain prices gas — legacy fixed gas price, or EIP-1559 base + priority.
+      enum:
+        - legacy
+        - erc1559
+
     GasFees:
-      description: Current gas fees for a blockchain. Contains either gasPrice for non-EIP-1559 chains or maxFeePerGas and maxPriorityFeePerGas for EIP-1559 enabled chains.
+      description: Current gas fees for a blockchain with optional EIP-1559 fee history.
       type: object
+      required:
+        - effectiveGasPrice
+        - pricingModel
       properties:
+        effectiveGasPrice:
+          type: string
+          format: big-number-string
+          description: Effective gas price in wei — for legacy chains, the gas price; for EIP-1559, next base fee plus max priority fee.
+          example: "26303502542"
+        pricingModel:
+          $ref: "#/components/schemas/GasFeePricingModel"
         gasPrice:
           type: string
           format: big-number-string
@@ -5121,6 +5147,85 @@ components:
           description: Maximum priority fee per gas in wei for EIP-1559 chains. Will be null for non-EIP-1559 chains.
           example: "2000000000"
           nullable: true
+        nextBaseFeePerGas:
+          type: string
+          format: big-number-string
+          description: Projected base fee per gas for the next block.
+          example: "25000000000"
+          nullable: true
+        history:
+          $ref: "#/components/schemas/GasFeesHistory"
+          nullable: true
+
+    GasFeesHistory:
+      type: object
+      description: Normalized `eth_feeHistory` data for recent blocks.
+      required:
+        - nextBaseFeePerGas
+        - blocks
+      properties:
+        nextBaseFeePerGas:
+          type: string
+          format: big-number-string
+          description: Projected base fee per gas for the next block.
+          example: "25000000000"
+        blocks:
+          type: array
+          items:
+            $ref: "#/components/schemas/BlockHistory"
+
+    BlockHistory:
+      type: object
+      description: Fee and usage data for one historical block.
+      required:
+        - blockNumber
+        - baseFeePerGas
+        - gasUsedRatio
+        - baseFeePerBlob
+        - blobGasUsedRatio
+        - reward20
+        - reward50
+        - reward100
+      properties:
+        blockNumber:
+          type: integer
+          description: Block number.
+          example: 22598066
+        baseFeePerGas:
+          type: string
+          format: big-number-string
+          description: Base fee per gas in wei for this block.
+          example: "21303502542"
+        gasUsedRatio:
+          type: number
+          format: double
+          description: Ratio of gas used to block gas limit.
+          example: 0.4872777320913827
+        baseFeePerBlob:
+          type: string
+          format: big-number-string
+          description: Blob base fee in wei for this block (0 when unavailable).
+          example: "1"
+        blobGasUsedRatio:
+          type: number
+          format: double
+          description: Ratio of blob gas used for this block (0 when unavailable).
+          example: 0
+        reward20:
+          type: string
+          format: big-number-string
+          description: Effective priority fee reward at the 20th percentile.
+          example: "5000000"
+        reward50:
+          type: string
+          format: big-number-string
+          description: Effective priority fee reward at the 50th percentile.
+          example: "12000000"
+        reward100:
+          type: string
+          format: big-number-string
+          description: Effective priority fee reward at the 100th percentile.
+          example: "350000000"
 
     ContractCodeInfo:
       description: Result of inspecting bytecode at an address, including EIP-7702 delegation when applicable.
