@@ -1,8 +1,43 @@
 import { z } from "zod";
 
+// Validation for one historical block fee item (eth_feeHistory normalized)
+export const blockHistorySchema = z
+  .object({
+    blockNumber: z.number().int().describe("Block number"),
+    baseFeePerGas: z.string().describe("Base fee per gas in wei for this block"),
+    gasUsedRatio: z.number().describe("Ratio of gas used to block gas limit"),
+    baseFeePerBlob: z.string().describe("Blob base fee in wei for this block (0 when unavailable)"),
+    blobGasUsedRatio: z
+      .number()
+      .describe("Ratio of blob gas used for this block (0 when unavailable)"),
+    reward20: z.string().describe("Effective priority fee reward at the 20th percentile"),
+    reward50: z.string().describe("Effective priority fee reward at the 50th percentile"),
+    reward100: z.string().describe("Effective priority fee reward at the 100th percentile"),
+  })
+  .describe("Fee and usage data for one historical block");
+
+// Validation for fee history bundle
+export const gasFeesHistorySchema = z
+  .object({
+    nextBaseFeePerGas: z.string().describe("Projected base fee per gas for the next block"),
+    blocks: z.array(blockHistorySchema).describe("Recent fee history blocks"),
+  })
+  .describe("Normalized eth_feeHistory data for recent blocks");
+
+// How the chain prices gas (matches GasFeePricingModel in the API spec)
+export const gasFeePricingModelSchema = z
+  .enum(["legacy", "erc1559"])
+  .describe("How the chain prices gas — legacy fixed gas price, or EIP-1559 base + priority");
+
 // Validation for gas fees
 export const gasFeesSchema = z
   .object({
+    effectiveGasPrice: z
+      .string()
+      .describe(
+        "Effective gas price in wei — for legacy chains, the gas price; for EIP-1559, next base fee plus max priority fee"
+      ),
+    pricingModel: gasFeePricingModelSchema,
     gasPrice: z
       .string()
       .optional()
@@ -24,10 +59,17 @@ export const gasFeesSchema = z
       .describe(
         "Maximum priority fee per gas in wei for EIP-1559 chains. Will be null for non-EIP-1559 chains"
       ),
+    nextBaseFeePerGas: z
+      .string()
+      .optional()
+      .nullable()
+      .describe("Projected base fee per gas for the next block"),
+    history: gasFeesHistorySchema
+      .optional()
+      .nullable()
+      .describe("Normalized fee history for recent blocks"),
   })
-  .describe(
-    "Current gas fees for a blockchain. Contains either gasPrice for non-EIP-1559 chains or maxFeePerGas and maxPriorityFeePerGas for EIP-1559 enabled chains"
-  );
+  .describe("Current gas fees for a blockchain with optional EIP-1559 fee history");
 
 // Validation for native currency information
 export const nativeCurrencyInformationSchema = z
@@ -85,6 +127,13 @@ export const listChainsSchema = z
 export const getFeesSchema = z
   .object({
     chainId: z.number().int().positive().describe("The ChainId of a supported chain on 1Shot API"),
+    numberOfBlocks: z
+      .number()
+      .int()
+      .min(1)
+      .max(1024)
+      .optional()
+      .describe("Number of latest blocks to request from eth_feeHistory"),
   })
   .describe("Parameters for getting gas fees for a specific chain");
 

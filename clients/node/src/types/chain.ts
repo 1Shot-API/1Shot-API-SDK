@@ -6,6 +6,9 @@ import {
   listChainsSchema,
   nativeCurrencyInformationSchema,
   gasFeesSchema,
+  gasFeePricingModelSchema,
+  gasFeesHistorySchema,
+  blockHistorySchema,
   getFeesSchema,
   contractCodeInfoSchema,
   getCodeSchema,
@@ -25,6 +28,9 @@ export type NativeCurrencyInformation = z.infer<typeof nativeCurrencyInformation
  * Represents current gas fees for a blockchain.
  */
 export type GasFees = z.infer<typeof gasFeesSchema>;
+export type GasFeePricingModel = z.infer<typeof gasFeePricingModelSchema>;
+export type GasFeesHistory = z.infer<typeof gasFeesHistorySchema>;
+export type BlockHistory = z.infer<typeof blockHistorySchema>;
 
 /**
  * Represents a paginated list of chains.

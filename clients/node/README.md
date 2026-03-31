@@ -476,12 +476,18 @@ const { response, page, pageSize, totalResults } = await client.chains.list({
 
 ### 4.2 Gas fees (`getFees`)
 
-Returns current gas pricing for a chain. For **EIP-1559** chains you typically get `maxFeePerGas` and `maxPriorityFeePerGas` (wei strings); for **legacy** style chains you may get `gasPrice` instead.
+Returns current gas pricing for a chain. Every response includes **`effectiveGasPrice`** (wei string) and **`pricingModel`** (`"legacy"` or `"erc1559"`). You also get chain-specific fields: for **EIP-1559**, typically `maxFeePerGas`, `maxPriorityFeePerGas`, and `nextBaseFeePerGas`, with optional `history` when requested; for **legacy** chains you may get `gasPrice` instead.
 
 ```typescript
-const fees = await client.chains.getFees(8453);
+const fees = await client.chains.getFees(8453, {
+  numberOfBlocks: 5, // optional: 1-1024
+});
+// fees.effectiveGasPrice — always present (wei)
+// fees.pricingModel — "legacy" | "erc1559"
 // fees.gasPrice — legacy chains, or null on EIP-1559
 // fees.maxFeePerGas, fees.maxPriorityFeePerGas — EIP-1559, or null on legacy
+// fees.nextBaseFeePerGas — projected base fee for next block (EIP-1559), or null
+// fees.history?.blocks — optional normalized fee history when numberOfBlocks is provided
 ```
 
 ### 4.3 Contract bytecode (`getCode`)

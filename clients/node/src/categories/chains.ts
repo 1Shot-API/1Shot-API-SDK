@@ -41,21 +41,29 @@ export class Chains {
   }
 
   /**
-   * Get current gas fees for a specific chain
+   * Get current gas fees (and optional fee history) for a specific chain.
    * @param chainId The ChainId of the chain to get fees for
+   * @param options Optional parameters (e.g. numberOfBlocks for eth_feeHistory window)
    * @returns Promise<GasFees>
-   * @throws {ZodError} If the chainId is invalid
+   * @throws {ZodError} If the parameters are invalid
    */
-  async getFees(chainId: number): Promise<GasFees> {
+  async getFees(chainId: number, options?: { numberOfBlocks?: number }): Promise<GasFees> {
     // Validate all parameters using the schema
     const validatedParams = getFeesSchema.parse({
       chainId,
+      ...options,
     });
 
-    const response = await this.client.request<GasFees>(
-      "GET",
-      `/chains/${validatedParams.chainId}/fees`
-    );
+    const queryParams = new URLSearchParams();
+    if (validatedParams.numberOfBlocks !== undefined) {
+      queryParams.append("numberOfBlocks", validatedParams.numberOfBlocks.toString());
+    }
+    const queryString = queryParams.toString();
+    const path = queryString
+      ? `/chains/${validatedParams.chainId}/fees?${queryString}`
+      : `/chains/${validatedParams.chainId}/fees`;
+
+    const response = await this.client.request<GasFees>("GET", path);
 
     // Validate the response
     return gasFeesSchema.parse(response);
