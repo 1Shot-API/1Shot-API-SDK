@@ -20,14 +20,24 @@ export const contractMethodStatusSchema = z
 // Validation for contractMethod parameters
 /**
  * Schema for contractMethod parameters. This is a recursive schema that can handle nested objects and arrays.
+ * Includes `bigint` for uint256 and other integer values commonly produced by viem/ethers (e.g. Permit2 `nonce`).
  */
 export const contractMethodParamsSchema: z.ZodType<{
-  [key: string]: string | number | boolean | null | undefined | { [key: string]: any } | Array<any>;
+  [key: string]:
+    | string
+    | number
+    | bigint
+    | boolean
+    | null
+    | undefined
+    | { [key: string]: any }
+    | Array<any>;
 }> = z.record(
   z.string(),
   z.union([
     z.string(),
     z.number(),
+    z.bigint(),
     z.boolean(),
     z.null(),
     z.undefined(),
@@ -36,6 +46,7 @@ export const contractMethodParamsSchema: z.ZodType<{
       z.union([
         z.string(),
         z.number(),
+        z.bigint(),
         z.boolean(),
         z.null(),
         z.undefined(),

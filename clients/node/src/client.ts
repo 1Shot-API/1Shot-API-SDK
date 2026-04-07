@@ -8,6 +8,11 @@ import { Webhooks } from "./categories/webhooks.js";
 import { IOneShotClient } from "./types/client.js";
 import { ClientConfig, TokenResponse } from "./types.js";
 
+/** Serialize `bigint` (e.g. viem/ethers uint256) as decimal strings for JSON bodies. */
+function jsonReplacer(_key: string, value: unknown): unknown {
+  return typeof value === "bigint" ? value.toString() : value;
+}
+
 export class OneShotClient implements IOneShotClient {
   private config: ClientConfig;
   private accessToken: string | null = null;
@@ -70,7 +75,7 @@ export class OneShotClient implements IOneShotClient {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: body ? JSON.stringify(body, jsonReplacer) : undefined,
     });
 
     if (!response.ok) {
