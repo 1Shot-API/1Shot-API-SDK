@@ -192,7 +192,7 @@ Delegations let another address (delegate) act on behalf of the wallet within co
 
 ```typescript
 const delegation = await client.wallets.createDelegation("your_wallet_id", {
-  delegationData: "<signed delegation payload from your signer>",
+  delegationData: ["<signed delegation payload from your signer>"],
   startTime: Math.floor(Date.now() / 1000),
   endTime: Math.floor(Date.now() / 1000) + 86400 * 7, // 7 days
   contractAddresses: ["0x..."],
@@ -511,11 +511,11 @@ const codeInfo = await client.chains.getCode(
 
 ### 5.1 Get available webhook event names
 
-List event names that may trigger webhooks (e.g. `TransactionExecutionSuccess`, `TransactionExecutionFailure`).
+List event names that may trigger webhooks (e.g. `TransactionExecutionSuccess`, `TransactionExecutionSubmitted`, `TransactionExecutionFailure`).
 
 ```typescript
 const { events } = await client.webhooks.getEvents();
-// events: ("TransactionExecutionFailure" | "TransactionExecutionSuccess" | ...)[]
+// events: ("TransactionExecutionFailure" | "TransactionExecutionSubmitted" | "TransactionExecutionSuccess" | ...)[]
 ```
 
 ### 5.2 Webhook triggers

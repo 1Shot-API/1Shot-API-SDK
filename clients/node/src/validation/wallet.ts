@@ -189,7 +189,12 @@ export const delegationSchema = z
       .describe(
         "Array of method names that the wallet can execute. If empty, all methods are allowed"
       ),
-    delegationData: z.string().describe("The actual Delegation object serialized as a JSON string"),
+    delegationData: z
+      .array(z.string())
+      .min(1)
+      .describe(
+        "Ordered chain of signed delegations; each element is one delegation as a JSON string"
+      ),
     updated: z.number().describe("Unix timestamp of the last update to this delegation"),
     created: z.number().describe("Unix timestamp when this delegation was created"),
   })
@@ -259,9 +264,10 @@ export const createDelegationSchema = z
         "Array of method names that the wallet can execute. If empty, all methods are allowed"
       ),
     delegationData: z
-      .string()
+      .array(z.string())
+      .min(1)
       .describe(
-        "The actual Delegation object serialized as a JSON string. BigInts must be encoded as strings"
+        "Ordered delegation chain; each item is one signed delegation serialized as a JSON string. BigInts must be encoded as strings"
       ),
   })
   .describe("Parameters for creating a new delegation for a wallet");

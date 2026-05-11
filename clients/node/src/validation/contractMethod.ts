@@ -72,9 +72,15 @@ export const contractMethodEstimateSchema = z
     functionName: z
       .string()
       .describe("The name of the function on the contract that will be called"),
+    success: z
+      .boolean()
+      .describe(
+        "False when gas estimation failed (e.g. revert); fee fields may still be populated"
+      ),
     gasAmount: z
       .string()
-      .describe("The estimated amount of gas units the contractMethod will consume"),
+      .nullable()
+      .describe("Gas units when estimation succeeded; null when success is false"),
     maxFeePerGas: z
       .string()
       .nullable()
@@ -84,6 +90,11 @@ export const contractMethodEstimateSchema = z
       .nullable()
       .describe("The maximum priority fee per gas unit for EIP-1559 contractMethods"),
     gasPrice: z.string().nullable().describe("The gas price for legacy contractMethods"),
+    error: z
+      .string()
+      .optional()
+      .nullable()
+      .describe("Present when success is false; may include decoded revert data when available"),
   })
   .describe(
     "A summary of values required to estimate the cost of executing a contractMethod. Used to determine gas fees and contractMethod costs before execution"
@@ -740,6 +751,11 @@ export const estimateContractMethodSchema = z
       .describe(
         "The address of the smart contract. Can be overridden for this specific estimate (e.g. proxy or implementation address)"
       ),
+    walletId: z
+      .uuid()
+      .optional()
+      .nullable()
+      .describe("Escrow wallet ID to estimate gas as for this call"),
   })
   .describe(
     "Parameters for estimating a contractMethod - returns data about fees and gas amount. Used to calculate contractMethod costs before execution"
