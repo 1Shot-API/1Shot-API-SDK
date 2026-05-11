@@ -328,7 +328,7 @@ export class ContractMethods {
    * Estimate the cost of executing a contractMethod
    * @param contractMethodId The ID of the contractMethod to estimate
    * @param params Configuration parameters for the contractMethod
-   * @param options Optional estimation options (`authorizationList`, `value`, `contractAddress` override)
+   * @param options Optional estimation options (`walletId`, `authorizationList`, `value`, `contractAddress` override)
    * @returns Promise<ContractMethodEstimate>
    * @throws {ZodError} If the parameters are invalid
    */
@@ -336,6 +336,7 @@ export class ContractMethods {
     contractMethodId: string,
     params: ContractMethodParams,
     options?: {
+      walletId?: string;
       authorizationList?: ERC7702Authorization[];
       value?: string;
       contractAddress?: string;
@@ -352,6 +353,7 @@ export class ContractMethods {
       `/methods/${validatedParams.contractMethodId}/estimate`,
       {
         params: validatedParams.params,
+        walletId: validatedParams.walletId,
         authorizationList: validatedParams.authorizationList,
         value: validatedParams.value,
         contractAddress: validatedParams.contractAddress,

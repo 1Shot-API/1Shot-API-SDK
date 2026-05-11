@@ -4,6 +4,7 @@ import { z } from "zod";
 export const eEventNameSchema = z
   .enum([
     "TransactionExecutionFailure",
+    "TransactionExecutionSubmitted",
     "TransactionExecutionSuccess",
     "EscrowWalletLowBalanceDetected",
     "EscrowWalletDepositConfirmed",

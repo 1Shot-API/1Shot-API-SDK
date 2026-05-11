@@ -279,7 +279,7 @@ export class Wallets {
   async createDelegation(
     walletId: string,
     params: {
-      delegationData: string;
+      delegationData: string[];
       startTime?: number;
       endTime?: number;
       contractAddresses?: string[];

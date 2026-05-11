@@ -320,6 +320,8 @@ paths:
               properties:
                 params:
                   $ref: '#/components/schemas/JSONValue'
+                walletId:
+                  $ref: "#/components/schemas/WalletId"
                 contractAddress:
                   $ref: "#/components/schemas/ContractAddress"
                 authorizationList:
@@ -1952,10 +1954,14 @@ paths:
                   description: Array of method names that the wallet can execute. If empty, all methods are allowed.
                   example: ["mint", "transfer"]
                 delegationData:
-                  type: string
-                  format: json-string
-                  description: The actual Delegation object serialized as a JSON string. BigInts must be encoded as strings.
-                  example: {"authority":"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","caveats":[],"delegate":"0x74847c451c3745fcdf4fd447a9fa5eef8a6791a9","delegator":"0x3e6a2f0CBA03d293B54c9fCF354948903007a798","salt":"0x","signature":"0x000007dc509f5f440bd07e2a51cb8dd135f170bc8886ccf24c35652d256d4f06501537e663fbb3b6e51ca640ad4791fb605ba7434d4d8a0a0a24bfd4d841e88f1c"}
+                  type: array
+                  minItems: 1
+                  items:
+                    type: string
+                    format: json-string
+                  description: Ordered delegation chain. Each item is one signed Delegation Framework delegation serialized as a JSON string. BigInts must be encoded as strings.
+                  example:
+                    - '{"authority":"0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff","caveats":[],"delegate":"0x74847c451c3745fcdf4fd447a9fa5eef8a6791a9","delegator":"0x3e6a2f0CBA03d293B54c9fCF354948903007a798","salt":"0x","signature":"0x000007dc509f5f440bd07e2a51cb8dd135f170bc8886ccf24c35652d256d4f06501537e663fbb3b6e51ca640ad4791fb605ba7434d4d8a0a0a24bfd4d841e88f1c"}'
               required:
                 - delegationData
       security:
@@ -3885,6 +3891,7 @@ components:
       description: Event names that can trigger webhooks
       enum:
         - TransactionExecutionFailure
+        - TransactionExecutionSubmitted
         - TransactionExecutionSuccess
         - EscrowWalletLowBalanceDetected
         - EscrowWalletDepositConfirmed
@@ -4631,10 +4638,14 @@ components:
           $ref: "#/components/schemas/ContractAddress"
         functionName:
           type: string
+        success:
+          type: boolean
+          description: False when gas estimation failed (e.g. revert); fee fields may still be populated.
         gasAmount:
           type: string
           format: big-number-string
-          description: The amount of gas units it will use. This is a stringified bigint.
+          nullable: true
+          description: Gas units when estimation succeeded; null when success is false.
           example: "123400000000000000000"
         maxFeePerGas:
           type: string
@@ -4651,10 +4662,14 @@ components:
           format: big-number-string
           example: "123400000000000000000"
           nullable: true
+        error:
+          type: string
+          description: Present when success is false; may include decoded revert data when available.
       required:
         - chainId
         - contractAddress
         - functionName
+        - success
         - gasAmount
         - maxFeePerGas
         - maxPriorityFeePerGas
@@ -5010,7 +5025,12 @@ components:
               description: Array of method names that the wallet can execute. If empty, all methods are allowed.
               example: ["mint", "transfer"]
             delegationData:
-              $ref: "#/components/schemas/DelegationData"
+              type: array
+              minItems: 1
+              items:
+                type: string
+                format: json-string
+              description: Ordered chain of signed delegations; each element is one delegation as a JSON string.
           required:
             - id
             - businessId
