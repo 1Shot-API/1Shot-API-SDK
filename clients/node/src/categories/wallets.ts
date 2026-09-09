@@ -402,10 +402,15 @@ export class Wallets {
   }
 
   /**
-   * Sign a plain UTF-8 message with the server wallet (EIP-191 / `personal_sign`).
+   * Sign an EIP-191 personal message with the server wallet (`personal_sign`).
    * Uses **POST** `/wallets/{walletId}/signature/erc191` so long messages are not limited by URL length.
+   *
+   * - UTF-8 text (e.g. `"Login to MyApp"`) is hashed as a string.
+   * - MetaMask-style hex (`0x` + even-length hex digits) is decoded to raw bytes first — use this for
+   *   32-byte keccak digests (e.g. LiFi quote hashes) so recovery matches `hashMessage({ raw: digest })`.
+   *
    * @param walletId The ID of the wallet to sign with
-   * @param params Plain `message` string to sign
+   * @param params `message` string to sign (UTF-8 or hex bytes)
    * @returns Promise<SignatureResponse> signature hex; `data` is the message that was signed
    */
   async signMessage(

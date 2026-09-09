@@ -101,7 +101,7 @@ const updated = await client.wallets.update("your_wallet_id", {
 
 ### 1.4 Get signatures from server wallets
 
-Server wallets can produce **EIP-3009** and **Permit2** signatures for transfer flows (e.g. gasless approvals), **EIP-712** typed data via `signTypedData` (`eth_signTypedData_v4`), and **EIP-191** plain-text messages via `signMessage` (`personal_sign`). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
+Server wallets can produce **EIP-3009** and **Permit2** signatures for transfer flows (e.g. gasless approvals), **EIP-712** typed data via `signTypedData` (`eth_signTypedData_v4`), and **EIP-191** messages via `signMessage` (`personal_sign` — UTF-8 text or MetaMask-style hex for raw bytes). For Permit2, you must first authorize the wallet for it, which requires running a transaction. The wallet must have gas in it in order to run the authorize transaction.
 
 **EIP-3009**
 
@@ -165,14 +165,26 @@ const sig = await client.wallets.signTypedData("your_wallet_id", {
 
 **EIP-191 (`signMessage`)**
 
-Sign a plain UTF-8 string (EIP-191 personal message). **POST** is used so long text is not limited by URL length.
+Sign an EIP-191 personal message. **POST** is used so long text is not limited by URL length.
+
+- Plain UTF-8 strings are hashed as text (existing behavior).
+- MetaMask-style hex (`0x` + even-length hex digits) is treated as **raw bytes** — pass a 32-byte keccak digest this way so on-chain recovery matches `hashMessage({ raw: digest })` / `MessageHashUtils.toEthSignedMessageHash(bytes32)`.
 
 ```typescript
+// UTF-8 text
 const sig = await client.wallets.signMessage("your_wallet_id", {
   message: "Login to MyApp as user@example.com",
 });
-// sig.signature — hex; sig.data — the message that was signed
+
+// Raw 32-byte digest (e.g. LiFi quote hash)
+const digest = keccak256(...); // 0x + 64 hex chars
+const quoteSig = await client.wallets.signMessage("your_wallet_id", {
+  message: digest,
+});
+// recoverAddress({ hash: hashMessage({ raw: digest }), signature: quoteSig.signature })
 ```
+
+`sig.signature` is hex; `sig.data` is the message that was signed.
 
 **Authorize Permit2**
 

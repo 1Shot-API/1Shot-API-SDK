@@ -362,7 +362,9 @@ export const signMessageBodySchema = z
   .object({
     message: z
       .string()
-      .describe("Plain UTF-8 text to sign (EIP-191 / personal_sign). Use POST for long messages."),
+      .describe(
+        "EIP-191 / personal_sign input. Plain UTF-8 text, or MetaMask-style hex (0x + even-length hex digits) for raw bytes (e.g. a 32-byte keccak digest). Use POST for long messages."
+      ),
   })
   .describe("Body for EIP-191 message signature via POST");
 
