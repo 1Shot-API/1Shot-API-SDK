@@ -12,6 +12,7 @@ import {
   ContractMethodParams,
   ContractMethodStateMutability,
   ERC7702Authorization,
+  EvmStateOverride,
   ExecuteBatchContractMethod,
   ExecuteBatchAsDelegatorContractMethod,
 } from "../types/contractMethod.js";
@@ -328,7 +329,7 @@ export class ContractMethods {
    * Estimate the cost of executing a contractMethod
    * @param contractMethodId The ID of the contractMethod to estimate
    * @param params Configuration parameters for the contractMethod
-   * @param options Optional estimation options (`walletId`, `authorizationList`, `value`, `contractAddress` override)
+   * @param options Optional estimation options (`walletId`, `authorizationList`, `value`, `contractAddress` override, `stateOverride`)
    * @returns Promise<ContractMethodEstimate>
    * @throws {ZodError} If the parameters are invalid
    */
@@ -340,6 +341,7 @@ export class ContractMethods {
       authorizationList?: ERC7702Authorization[];
       value?: string;
       contractAddress?: string;
+      stateOverride?: EvmStateOverride;
     }
   ): Promise<ContractMethodEstimate> {
     const validatedParams = estimateContractMethodSchema.parse({
@@ -357,6 +359,7 @@ export class ContractMethods {
         authorizationList: validatedParams.authorizationList,
         value: validatedParams.value,
         contractAddress: validatedParams.contractAddress,
+        stateOverride: validatedParams.stateOverride ?? undefined,
       }
     );
 

@@ -30,6 +30,9 @@ import {
   contractMethodTestResultSchema,
   contractMethodEncodeResultSchema,
   erc7702AuthorizationSchema,
+  evmStateDiffEntrySchema,
+  evmStateOverrideAccountSchema,
+  evmStateOverrideSchema,
 } from "../validation/contractMethod.js";
 
 export type ContractMethodStateMutability = z.infer<typeof contractMethodStateMutabilitySchema>;
@@ -67,3 +70,6 @@ export type ContractContractMethods = z.infer<typeof contractContractMethodsSche
 export type ContractMethodTestResult = z.infer<typeof contractMethodTestResultSchema>;
 export type ContractMethodEncodeResult = z.infer<typeof contractMethodEncodeResultSchema>;
 export type ERC7702Authorization = z.infer<typeof erc7702AuthorizationSchema>;
+export type EvmStateDiffEntry = z.infer<typeof evmStateDiffEntrySchema>;
+export type EvmStateOverrideAccount = z.infer<typeof evmStateOverrideAccountSchema>;
+export type EvmStateOverride = z.infer<typeof evmStateOverrideSchema>;

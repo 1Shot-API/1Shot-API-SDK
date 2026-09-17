@@ -335,6 +335,15 @@ paths:
                   format: big-number-string
                   description: The amount of native token to send along with the Contract Method. This is only applicable for Contract Methods that are payable. Including this value for a nonpayable method will result in an error.
                   example: "123400000000000000000"
+                stateOverride:
+                  type: array
+                  description: |
+                    Estimate-only Geth-style state overrides for eth_estimateGas simulation
+                    (e.g. inject delegator bytecode or patch ERC-20 balance/allowance slots).
+                    Not supported on /execute. Requires an RPC node that accepts the third
+                    parameter to eth_estimateGas.
+                  items:
+                    $ref: "#/components/schemas/EvmStateOverrideAccount"
       responses:
         200:
           description: "Success"
@@ -2058,7 +2067,7 @@ paths:
         Gets a signature from a Wallet (same behavior as **POST** on this path). Supported types:
         - **erc3009** / **permit2**: Token transfer authorizations. Pass `contractAddress`, `destinationAddress`, and `amount` as query parameters (plus optional `validUntil`, `validAfter`, `fromAddress`), or use **POST** with the same fields in the JSON body.
         - **erc712**: EIP-712 / `eth_signTypedData_v4`. Pass `domain`, `types`, and `message` (typed-data envelope: `primaryType` + struct `message`) as query JSON strings, or **POST** with objects (recommended for large payloads).
-        - **erc191**: EIP-191 personal message via `signMessage`. Pass **`message`** as the plain UTF-8 string to sign (query or **POST** body). Use **POST** for long messages.
+        - **erc191**: EIP-191 personal message via `signMessage` / `personal_sign`. Pass **`message`** as UTF-8 text, or as MetaMask-style hex (`0x` + even-length hex digits) to sign raw bytes (e.g. a 32-byte keccak digest for LiFi quote signing). Use **POST** for long messages.
       parameters:
         - name: walletId
           in: path
@@ -2068,7 +2077,7 @@ paths:
             $ref: "#/components/schemas/WalletId"
         - name: type
           in: path
-          description: erc3009 / permit2 (token auth), erc712 (typed data), erc191 (plain message, EIP-191).
+          description: erc3009 / permit2 (token auth), erc712 (typed data), erc191 (EIP-191 personal_sign; UTF-8 or hex bytes).
           required: true
           schema:
             type: string
@@ -2139,7 +2148,7 @@ paths:
           in: query
           description: |
             **erc712:** URL-encoded JSON string `{ "primaryType": "...", "message": { ...struct fields } }` (same shape as the typed-data root passed to `signTypedData`).
-            **erc191:** Plain UTF-8 text to sign (EIP-191). For long text prefer **POST**.
+            **erc191:** UTF-8 text to sign, or MetaMask-style hex (`0x` + even-length hex digits) for raw bytes (EIP-191 `personal_sign`). A 32-byte digest is typically `0x` + 64 hex chars. For long text prefer **POST**.
           required: false
           schema:
             type: string
@@ -2186,7 +2195,7 @@ paths:
 
         - **erc3009** / **permit2**: `contractAddress`, `destinationAddress`, `amount` (required); optional `validUntil`, `validAfter`, `fromAddress`.
         - **erc712**: `domain`, `types`, `message` (`{ primaryType, message: { ...struct } }`). Objects or JSON strings.
-        - **erc191**: `message` as a plain string (UTF-8).
+        - **erc191**: `message` as UTF-8 text, or MetaMask-style `0x`-hex for raw bytes (even hex length after `0x`).
       parameters:
         - name: walletId
           in: path
@@ -2247,7 +2256,8 @@ paths:
                 message:
                   description: |
                     **erc712:** object `{ primaryType, message }` (struct payload) or JSON string of that object.
-                    **erc191:** plain string to sign (EIP-191).
+                    **erc191:** UTF-8 string to sign, or MetaMask-style hex (`0x` + even-length hex digits) for raw bytes
+                    (e.g. `0x` + 64 hex chars for a 32-byte keccak digest). Odd-length hex is treated as UTF-8 text.
                   oneOf:
                     - type: string
                     - type: object
@@ -4182,6 +4192,9 @@ components:
         - 130
         - 480
         - 81457
+        - 5042002
+        - 5042
+        - 4663
         - 1952
         - 196
         - 59144
@@ -4956,6 +4969,46 @@ components:
           format: hex-string
           description: The hex string of the encoded data.
           example: "0x1234567890abcdef"
+
+    EvmStateDiffEntry:
+      type: object
+      required:
+        - slot
+        - value
+      properties:
+        slot:
+          type: string
+          format: hex-string
+          description: 32-byte storage slot (0x + 64 hex chars)
+        value:
+          type: string
+          format: hex-string
+          description: 32-byte storage value (0x + 64 hex chars)
+
+    EvmStateOverrideAccount:
+      type: object
+      required:
+        - address
+      properties:
+        address:
+          $ref: "#/components/schemas/ContractAddress"
+        code:
+          type: string
+          format: hex-string
+          description: Runtime bytecode to inject at this address for the simulation
+        balance:
+          type: string
+          format: big-number-string
+          description: Native balance override (wei) for the simulation
+        nonce:
+          type: integer
+          minimum: 0
+          description: Account nonce override for the simulation
+        stateDiff:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvmStateDiffEntry"
+          description: Storage slot patches (OpenZeppelin ERC-20 layout when patching token balances)
 
     ERC7702Authorization:
       description: A single authorization for an ERC-7702 transaction. It represents a single potential delegation from an EOA to a contract. The EOA must sign a message with the contract address, the chain ID, and a nonce. Authorizations are sticky, once a Contract Method has been executed with an authorization, future Contract Methods may be executed for the EOA using the authorized contract without a new authorization being submitted.
