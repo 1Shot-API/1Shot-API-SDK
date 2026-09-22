@@ -2,6 +2,7 @@
 
 import {
   executeContractMethodSchema,
+  estimateContractMethodSchema,
   readContractMethodSchema,
   testContractMethodSchema,
 } from '../src/validation/contractMethod.js';
@@ -67,5 +68,41 @@ describe('Execute contractMethod test', () => {
     });
 
     expect(parsedParams).toBeDefined();
+  });
+});
+
+describe('Estimate contractMethod test', () => {
+  const mockContractMethodId = '5857f83d-7d65-4614-9731-bdd238b01120';
+
+  it('should accept stateOverride on estimate', () => {
+    const parsedParams = estimateContractMethodSchema.parse({
+      contractMethodId: mockContractMethodId,
+      params: {},
+      stateOverride: [
+        {
+          address: '0x1111111111111111111111111111111111111111',
+          balance: '1000000000000000000',
+          stateDiff: [
+            {
+              slot: '0x0000000000000000000000000000000000000000000000000000000000000001',
+              value: '0x00000000000000000000000000000000000000000000000000000000000000ff',
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(parsedParams.stateOverride).toHaveLength(1);
+    expect(parsedParams.stateOverride?.[0]?.balance).toBe('1000000000000000000');
+  });
+
+  it('should reject stateOverride account with no patches', () => {
+    expect(() =>
+      estimateContractMethodSchema.parse({
+        contractMethodId: mockContractMethodId,
+        params: {},
+        stateOverride: [{ address: '0x1111111111111111111111111111111111111111' }],
+      })
+    ).toThrow();
   });
 });

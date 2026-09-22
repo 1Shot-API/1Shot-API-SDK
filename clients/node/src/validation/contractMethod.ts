@@ -377,6 +377,94 @@ export const erc7702AuthorizationSchema = z
     "A single authorization for an ERC-7702 contractMethod. It represents a single potential delegation from an EOA to a contract"
   );
 
+/** Max accounts in one estimate `stateOverride` payload (matches 1Shot API). */
+export const EVM_STATE_OVERRIDE_MAX_ACCOUNTS = 32;
+
+/** Max storage slots patched per account. */
+export const EVM_STATE_OVERRIDE_MAX_STATE_DIFF_PER_ACCOUNT = 256;
+
+/** Max `code` hex string length (chars, including `0x`). */
+export const EVM_STATE_OVERRIDE_MAX_CODE_HEX_LENGTH = 50_000;
+
+export const evmStateDiffEntrySchema = z
+  .object({
+    slot: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{64}$/)
+      .describe("32-byte storage slot (0x + 64 hex chars)"),
+    value: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{64}$/)
+      .describe("32-byte storage value (0x + 64 hex chars)"),
+  })
+  .describe("A single storage slot patch for eth_estimateGas state overrides");
+
+export const evmStateOverrideAccountSchema = z
+  .object({
+    address: z.string().describe("Account or contract address to override for the simulation"),
+    code: z
+      .string()
+      .regex(/^0x[a-fA-F0-9]*$/)
+      .optional()
+      .describe("Runtime bytecode to inject at this address for the simulation"),
+    balance: z.string().optional().describe("Native balance override (wei) for the simulation"),
+    nonce: z
+      .number()
+      .int()
+      .nonnegative()
+      .optional()
+      .describe("Account nonce override for the simulation"),
+    stateDiff: z
+      .array(evmStateDiffEntrySchema)
+      .optional()
+      .describe("Storage slot patches (OpenZeppelin ERC-20 layout when patching token balances)"),
+  })
+  .superRefine((account, ctx) => {
+    if (account.code != null && account.code.length > EVM_STATE_OVERRIDE_MAX_CODE_HEX_LENGTH) {
+      ctx.addIssue({
+        code: "custom",
+        message: `code exceeds max length ${EVM_STATE_OVERRIDE_MAX_CODE_HEX_LENGTH}`,
+        path: ["code"],
+      });
+    }
+    const hasPatch =
+      (account.code != null && account.code.length > 0) ||
+      account.balance != null ||
+      account.nonce != null ||
+      (account.stateDiff != null && account.stateDiff.length > 0);
+    if (!hasPatch) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          "Each stateOverride account must set at least one of code, balance, nonce, or non-empty stateDiff",
+        path: ["address"],
+      });
+    }
+    if (
+      account.stateDiff != null &&
+      account.stateDiff.length > EVM_STATE_OVERRIDE_MAX_STATE_DIFF_PER_ACCOUNT
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: `stateDiff exceeds max entries ${EVM_STATE_OVERRIDE_MAX_STATE_DIFF_PER_ACCOUNT}`,
+        path: ["stateDiff"],
+      });
+    }
+  })
+  .describe(
+    "Geth-style account state override for eth_estimateGas (estimate-only; not supported on /execute)"
+  );
+
+export const evmStateOverrideSchema = z
+  .array(evmStateOverrideAccountSchema)
+  .max(
+    EVM_STATE_OVERRIDE_MAX_ACCOUNTS,
+    `stateOverride exceeds max accounts ${EVM_STATE_OVERRIDE_MAX_ACCOUNTS}`
+  )
+  .describe(
+    "Estimate-only Geth-style state overrides for eth_estimateGas simulation. Requires an RPC that accepts the third parameter to eth_estimateGas"
+  );
+
 // Validation for executing a contractMethod
 export const executeContractMethodSchema = z
   .object({
@@ -756,6 +844,12 @@ export const estimateContractMethodSchema = z
       .optional()
       .nullable()
       .describe("Escrow wallet ID to estimate gas as for this call"),
+    stateOverride: evmStateOverrideSchema
+      .optional()
+      .nullable()
+      .describe(
+        "Estimate-only Geth-style state overrides for eth_estimateGas simulation (e.g. inject delegator bytecode or patch ERC-20 balance/allowance slots). Not supported on /execute"
+      ),
   })
   .describe(
     "Parameters for estimating a contractMethod - returns data about fees and gas amount. Used to calculate contractMethod costs before execution"
