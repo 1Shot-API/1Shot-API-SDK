@@ -2,6 +2,17 @@
 
 This repository contains official client libraries for the 1Shot API in various programming languages.
 
+## Agent Skills
+
+First-party integrator skills live in [1Shot-API/skills](https://github.com/1Shot-API/skills) (not in this repo). Install the SDK skill globally for local Cursor:
+
+```bash
+npm run skills:install
+# or: npx skills add 1Shot-API/skills --skill 1shot-api -g -a cursor -y
+```
+
+When public SDK/API surfaces change, update **`1shot-api`** in `1Shot-API/skills` in the same effort.
+
 ## Available Clients
 
 - [TypeScript/JavaScript](./clients/node) - Published to NPM

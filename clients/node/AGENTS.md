@@ -1,5 +1,16 @@
 This is the Node JS version of the client SDK for 1Shot API.
 
+## Agent Skills
+
+First-party integrator skills live in [1Shot-API/skills](https://github.com/1Shot-API/skills) — not in this repo. Install globally for local Cursor from the repo root:
+
+```bash
+npm run skills:install
+# 1shot-api → ~/.cursor/skills
+```
+
+When you change SDK methods, request/response shapes, or other integrator-facing behavior that the **`1shot-api`** skill documents, update that skill in `1Shot-API/skills` in the same effort.
+
 # General Instructions
 Do not bother trying to fix linting errors yourself, just use `npm run format` and leave it alone. 
 
