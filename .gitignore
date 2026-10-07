@@ -133,3 +133,8 @@ dist
 .DS_Store
 .idea
 .vscode
+
+# Agent Skills — first-party skills install globally only (never project-scope)
+.agents/
+.cursor/skills/
+skills-lock.json

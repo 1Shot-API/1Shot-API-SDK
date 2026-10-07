@@ -1,0 +1,8 @@
+{
+  "name": "@1shotapi/clients",
+  "private": true,
+  "description": "1Shot API client SDKs (Node, Python, Go, …)",
+  "scripts": {
+    "skills:install": "npx skills add 1Shot-API/skills --skill 1shot-api -g -a cursor -y"
+  }
+}
